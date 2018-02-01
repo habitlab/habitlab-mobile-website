@@ -43,15 +43,10 @@ if roles.https?
   app.use(require('koa-sslify')({trustProtoHeader: true}))
 
 require('routes/common_routes')
-if roles.reportbug?
-  require('routes/reportbug_routes')
-if roles.intervention?
-  require('routes/intervention_routes')
 if roles.logging?
   require('routes/logging_routes')
 if roles.viewdata?
   require('routes/viewdata_routes')
-  require('routes/webpage_routes')
 
 if roles.debug?
   do ->
