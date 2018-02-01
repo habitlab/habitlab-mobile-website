@@ -39,6 +39,26 @@ app.get('/addtolog', async function(ctx) {
   ctx.body = JSON.stringify({response: 'success', success: true})
 })
 
+app.post('/addtolog', async function(ctx) {
+  ctx.type = 'json'
+  let data = ctx.request.body
+  const {userid, logname} = data
+  try {
+    var [collection,db] = await get_collection_for_user_and_logname(userid, logname)
+    data.timestamp = Date.now()
+    await n2p(function(cb) {
+      collection.insert(fix_object(data), cb)
+    })
+  } catch(err) {
+    console.error('error in addtolog')
+    console.error(err)
+  } finally {
+    if (db != null)
+      db.close()
+  }
+  ctx.body = JSON.stringify({response: 'success', success: true})
+})
+
 /*
 app.get '/addtolog', (ctx) ->>
   ctx.type = 'json'
