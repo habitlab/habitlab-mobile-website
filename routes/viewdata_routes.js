@@ -25,8 +25,6 @@ const n2p = require('n2p')
 const moment = require('moment')
 const semver = require('semver')
 
-const prelude = require('prelude-ls')
-
 app.get('/printcollection', auth, async function(ctx) {
   const {collection, userid, logname} = ctx.request.query
   if (userid != null && logname != null) {
