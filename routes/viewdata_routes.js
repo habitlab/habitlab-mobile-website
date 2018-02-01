@@ -26,14 +26,14 @@ const moment = require('moment')
 const semver = require('semver')
 
 app.get('/printcollection', auth, async function(ctx) {
-  const {collection, userid, logname} = ctx.request.query
+  const {userid, logname} = ctx.request.query
+  const collection_name = ctx.request.query.collection
   if (userid != null && logname != null) {
-    collection = `${userid}_${logname}`
+    collection_name = `${userid}_${logname}`
   }
-  if (collection == null) {
+  if (collection_name == null) {
     ctx.body = JSON.stringify({response: 'error', error: 'need paramter collection'})
   }
-  collection_name = collection
   try {
     var [collection, db] = await get_collection(collection_name)
     items = await n2p(function(cb) {
