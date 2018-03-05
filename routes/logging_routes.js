@@ -19,6 +19,19 @@ const {
 
 const n2p = require('n2p');
 
+app.get('/helloworld', async function(ctx) {
+  let data = ctx.request.query
+  console.log('stuff being run on server')
+  ctx.body = 'hello world from get method!! you sent the following data: ' + JSON.stringify(data)
+})
+
+app.post('/helloworld', async function(ctx) {
+  //ctx.type = 'json'
+  let data = ctx.request.body
+  console.log('stuff being run on server')
+  ctx.body = 'hello world from post method!! you sent the following data: ' + JSON.stringify(data)
+})
+
 app.get('/addtolog', async function(ctx) {
   ctx.type = 'json'
   let data = ctx.request.query
@@ -36,7 +49,7 @@ app.get('/addtolog', async function(ctx) {
     if (db != null)
       db.close()
   }
-  ctx.body = JSON.stringify({response: 'success', success: true})
+  ctx.body = JSON.stringify({response: 'hello', success: true})
 })
 
 app.post('/addtolog', async function(ctx) {
