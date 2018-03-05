@@ -1,0 +1,19 @@
+<html>
+  <body>
+    here are your logs
+    <div id="collections"></div>
+    <script src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script>
+        async function main() {
+          let collections = await fetch('/listcollections').then(x => x.json())
+          console.log(collections)
+          for (let collection of collections) {
+            $('#collections').append($('<a>').text(collection).attr('href', '/printcollection?collection=' + collection))
+            $('#collections').append($('<br>'))
+          }
+        }
+
+        main()
+      </script>
+  </body>
+</html>
