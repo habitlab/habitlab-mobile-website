@@ -11,7 +11,7 @@ require! {
 moment = require 'moment-timezone'
 
 app.get '/ping', (ctx) ->>
-  ctx.body = 'hi'
+  ctx.body = 'wassup'
   return
 
 appid_to_time_checked = {}
