@@ -76,7 +76,7 @@ app.post('/addtolog', async function(ctx) {
 
 app.post('/addsessiontototal', async function(ctx) {
   ctx.type = 'json';
-  const {userid} = data;
+  const {userid} = ctx.request.body;
   try {
     var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
     obj = {};
