@@ -93,7 +93,7 @@ app.post('/addsessiontototal', async function(ctx) {
       obj[year][month][date] = 0;
     }
     obj[year][month][date] += 4;
-    
+    ctx.body = obj
   } catch (e) {
     console.log(e);
   }
