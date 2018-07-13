@@ -76,14 +76,14 @@ app.post('/addtolog', async function(ctx) {
 
 app.post('/addsessiontototal', async function(ctx) {
   ctx.type = 'json';
-  const {userid} = ctx.request.body;
+  const {userid, domain} = ctx.request.body;
   try {
     var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
-    obj = collection.find();
+    obj = collection.find({domain: domain});
     if (obj != null && obj.length > 0)  {
       obj = [0]
     } else {
-      obj = {}
+      obj = {domain: domain}
     }
     year = moment().year();
     if (obj[year] == null) {
@@ -99,7 +99,7 @@ app.post('/addsessiontototal', async function(ctx) {
     }
     obj[year][month][date] += 4;
     await n2p(function(cb) {
-      collection.save(fix_object(obj),cb)
+      collection.update({domain: domain}, fix_object(obj),cb);
     });
     ctx.body = obj
   } catch (e) {
