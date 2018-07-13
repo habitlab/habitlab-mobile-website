@@ -72,6 +72,11 @@ app.post('/addtolog', async function(ctx) {
   ctx.body = JSON.stringify({response: 'success', success: true})
 })
 
+app.post('/addtolog2', async function(ctx) {
+  ctx.type = 'json'
+  ctx.body = JSON.stringify(ctx.request.body)
+});
+
 /*
 app.get '/addtolog', (ctx) ->>
   ctx.type = 'json'
