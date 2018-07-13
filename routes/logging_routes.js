@@ -127,6 +127,8 @@ app.post('/addsessiontototal', async function(ctx) {
 app.get('/user_external_stats', async function(ctx) {
   // Get time spent in day, week, and month.
   const {domain, userid} = ctx.request.query;
+  console.log(userid);
+  console.log(domain);
   var return_obj = {};
   return_obj.days = [];
   return_obj.weeks = [];
@@ -155,7 +157,7 @@ app.get('/user_external_stats', async function(ctx) {
 /**
  * Sums total time of the designated period (month, week) so far as
  * noted in DB.
- * @param moment: moment object representing the period you want to sum to
+ * @param moment_obj: moment object representing the period you want to sum to
  * @param period: string ('week' or 'month')
  * @param object: object representing MongoDB document for domain.
  */
