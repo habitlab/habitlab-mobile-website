@@ -136,9 +136,11 @@ app.get('/user_external_stats', async function(ctx) {
   var obj = await n2p(function(cb) {
     collection.find({domain: domain}).toArray(cb);
   });
+  console.log(JSON.stringify(obj));
   time_cursor = moment();
   for (var i = 0; i < 7; i++) {
     var key = time_cursor.format(DATE_FORMAT);
+    console.log(key);
     if (obj[key] != null) {
       return_obj.days.push(obj[key]);
     } else {
