@@ -157,7 +157,7 @@ app.get('/user_external_stats', async function(ctx) {
  * noted in DB.
  * @param moment: moment object representing the period you want to sum to
  * @param period: string ('week' or 'month')
- * @param object; object representing MongoDB document for domain.
+ * @param object: object representing MongoDB document for domain.
  */
 sum_time_of_period = function(moment_obj, period, object) {
   var today = moment_obj.format(DATE_FORMAT);
@@ -166,7 +166,7 @@ sum_time_of_period = function(moment_obj, period, object) {
     total_time = object[today];
   }
   //We need to clone this moment object since moments are mutable.
-  var begin_period = moment_obj(moment);
+  var begin_period = moment(moment_obj);
   begin_period.startOf(period);
   while(begin_period.format(DATE_FORMAT) != today) {
     var date = begin_period.format(DATE_FORMAT);
