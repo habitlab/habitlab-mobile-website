@@ -84,7 +84,7 @@ app.post('/addsessiontototal', async function(ctx) {
     })
     objFound = false;
     if (obj != null && obj.length > 0)  {
-      obj = [0]
+      obj = obj[0]
       objFound = true;
     } else {
       obj = {domain: domain}
