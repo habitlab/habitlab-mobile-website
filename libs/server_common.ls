@@ -8,6 +8,7 @@ require! {
   'getsecret'
   'koa-basic-auth'
   'n2p'
+  'moment'
 }
 
 export mongodb

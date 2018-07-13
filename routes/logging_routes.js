@@ -17,6 +17,8 @@ const {
   fix_object,
 } = require('libs/server_common');
 
+moment = require('moment');
+
 const n2p = require('n2p');
 
 app.get('/helloworld', async function(ctx) {
@@ -72,9 +74,29 @@ app.post('/addtolog', async function(ctx) {
   ctx.body = JSON.stringify({response: 'success', success: true})
 })
 
-app.post('/addtolog2', async function(ctx) {
-  ctx.type = 'json'
-  ctx.body = JSON.stringify(ctx.request.body)
+app.post('/addsessiontototal', async function(ctx) {
+  ctx.type = 'json';
+  const {userid} = data;
+  try {
+    var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
+    obj = {};
+    year = moment().year();
+    if (obj[year] == null) {
+      obj[year] = {};
+    }
+    month = moment().month();
+    if (obj[year][month] == null) {
+      obj[year][month] = {};
+    }
+    date = moment().date();
+    if (obj[year][month][date] == null) {
+      obj[year][month][date] = 0;
+    }
+    obj[year][month][date] += 4;
+    
+  } catch (e) {
+    console.log(e);
+  }
 });
 
 /*
