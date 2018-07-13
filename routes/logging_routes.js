@@ -20,6 +20,7 @@ const {
 moment = require('moment');
 
 const n2p = require('n2p');
+const DATE_FORMAT = "YYYYMMDD";
 
 app.get('/helloworld', async function(ctx) {
   let data = ctx.request.query
@@ -79,19 +80,17 @@ app.post('/addsessiontototal', async function(ctx) {
   const {userid, domain} = ctx.request.body;
   try {
     var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
-    obj = await n2p(function(cb) {
-      console.log("we get here");
+    var obj = await n2p(function(cb) {
       collection.find({domain: domain}).toArray(cb)
-      console.log("then pass to here");
     })
-    objFound = false;
+    var objFound = false;
     if (obj != null && obj.length > 0)  {
       obj = obj[0]
       objFound = true;
     } else {
       obj = {domain: domain}
     }
-    date = moment().format("YYYYMMDD")
+    var date = moment().format(DATE_FORMAT)
     if (obj[date] == null) {
       obj[date] = 0
     }
@@ -110,11 +109,45 @@ app.post('/addsessiontototal', async function(ctx) {
         collection.insert(fix_object(obj),cb);
       });
     }
-    
     ctx.body = obj;
   } catch (e) {
     console.log(e);
   }
+});
+
+app.get('/user_external_stats', async function(ctx) {
+  // Get time spent in day, week, and month.
+  const {domain, userid} = ctx.request.query;
+  var return_obj = {};
+  return_obj.day = 0;
+  return_obj.week = 0;
+  return_obj.month = 0;
+  var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
+  var obj = await n2p(function(cb) {
+    collection.find({domain: domain}).toArray(cb);
+  });
+  current_date = moment().format(DATE_FORMAT);
+  return_obj.day += obj[current_date];
+  //To get week, we add up past seven days of time
+  week_ago = moment().subtract(7, 'days');
+  for (var i = 0; i < 7; i++) {
+    var key = week_ago.add(1,'days').format(DATE_FORMAT);
+    if (obj[key] != null) {
+      return_obj.week += obj[key];
+    }
+  }
+  // To get month, we add up all previous days in the month
+  begin_month = moment().startOf('month');
+  var days = 0;
+  while (begin_month.format(DATE_FORMAT) != week_ago) {
+    var new_date = begin_month.add(days, 'days');
+    days += 1;
+    var key = new_date.format(DATE_FORMAT);
+    if (obj[key] != null) {
+      return_obj.month += obj[key];   
+    }
+  }
+  ctx.body = return_obj;
 });
 
 /*
