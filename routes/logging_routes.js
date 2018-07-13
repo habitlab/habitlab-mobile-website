@@ -98,7 +98,7 @@ app.post('/addsessiontototal', async function(ctx) {
     obj[date] += 4;
     if (objFound) {
       console.log(JSON.stringify(obj));
-      collection.updateOne({domain: domain}, {$set: fix_object(obj)}, function(err, res) {
+      collection.updateOne({domain: domain}, {$set: obj}, function(err, res) {
         if (err)  {
           console.log("an error occurred.");
           throw err;
