@@ -104,7 +104,7 @@ app.post('/addsessiontototal', async function(ctx) {
     obj[year][month][date] += 4;
     if (objFound) {
       await n2p(function(cb) {
-        collection.update({"domain": domain}, fix_object(obj),cb);
+        collection.update({"domain": domain}, {$set: fix_object(obj)}, cb);
       });
     } else {
       await n2p(function(cb) {
