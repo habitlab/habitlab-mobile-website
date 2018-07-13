@@ -91,22 +91,14 @@ app.post('/addsessiontototal', async function(ctx) {
     } else {
       obj = {domain: domain}
     }
-    year = moment().year() + "";
-    if (obj[year] == null) {
-      obj[year] = {};
+    date = moment().format("YYYYMMDD")
+    if (obj[date] == null) {
+      obj[date] = 0
     }
-    month = moment().month() + "";
-    if (obj[year][month] == null) {
-      obj[year][month] = {};
-    }
-    date = moment().date() + "";
-    if (obj[year][month][date] == null) {
-      obj[year][month][date] = 0;
-    }
-    obj[year][month][date] += 4;
+    obj[date] += 4;
     if (objFound) {
       console.log(JSON.stringify(obj));
-      collection.updateOne({domain: domain}, {$set: obj}, function(err, res) {
+      collection.updateOne({domain: domain}, {$set: fix_object(obj)}, function(err, res) {
         if (err)  {
           console.log("an error occurred.");
           throw err;
