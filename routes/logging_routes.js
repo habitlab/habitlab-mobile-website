@@ -79,7 +79,7 @@ app.post('/addsessiontototal', async function(ctx) {
   const {userid, domain} = ctx.request.body;
   try {
     var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
-    obj = collection.find({domain: domain});
+    obj = collection.find({"domain": domain});
     objFound = false;
     if (obj != null && obj.length > 0)  {
       obj = [0]
@@ -102,7 +102,7 @@ app.post('/addsessiontototal', async function(ctx) {
     obj[year][month][date] += 4;
     if (objFound) {
       await n2p(function(cb) {
-        collection.update({domain: domain}, fix_object(obj),cb);
+        collection.update({"domain": domain}, fix_object(obj),cb);
       });
     } else {
       await n2p(function(cb) {
