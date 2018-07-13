@@ -37,7 +37,7 @@ else
 
 export mongourl = getsecret('MONGODB_URI') ? 'mongodb://localhost:27017/default'
 
-export mongourl2 = getsecret('MONGODB_URI2') ? 'mongodb://localhost:27017/default'
+export mongourl2 = getsecret('MONGODB_URI') ? 'mongodb://localhost:27017/default'
 
 export get_mongo_db = ->>
   try
