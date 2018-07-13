@@ -119,37 +119,55 @@ app.get('/user_external_stats', async function(ctx) {
   // Get time spent in day, week, and month.
   const {domain, userid} = ctx.request.query;
   var return_obj = {};
-  return_obj.day = 0;
-  return_obj.week = 0;
-  return_obj.month = 0;
+  return_obj.days = [];
+  return_obj.weeks = [];
   var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
   var obj = await n2p(function(cb) {
     collection.find({domain: domain}).toArray(cb);
   });
-  current_date = moment().format(DATE_FORMAT);
-  return_obj.day += obj[current_date];
-  //To get week, we add up past seven days of time
-  week_ago = moment().subtract(7, 'days');
+  time_cursor = moment();
   for (var i = 0; i < 7; i++) {
-    var key = week_ago.add(1,'days').format(DATE_FORMAT);
+    var key = time_cursor.format(DATE_FORMAT);
     if (obj[key] != null) {
-      return_obj.week += obj[key];
+      return_obj.days.push(obj[key]);
+    } else {
+      return_obj.days.push(0);
     }
+    time_cursor.subtract(1, 'days');
   }
-  // To get month, we add up all previous days in the month
-  begin_month = moment().startOf('month');
-  var days = 0;
-  while (begin_month.add(days, 'days').format(DATE_FORMAT) != week_ago) {
-    var new_date = begin_month.add(days, 'days');
-    days += 1;
-    var key = new_date.format(DATE_FORMAT);
-    if (obj[key] != null) {
-      return_obj.month += obj[key];   
-    }
+  time_cursor = moment();
+  for (var j = 0; j < 4; j++) {
+    return_obj.weeks.push(sum_time_of_period(time_cursor, 'week', obj))
+    time_cursor.subtract(1, 'weeks');
   }
   ctx.body = return_obj;
 });
 
+/**
+ * Sums total time of the designated period (month, week) so far as
+ * noted in DB.
+ * @param moment: moment object representing the period you want to sum to
+ * @param period: string ('week' or 'month')
+ * @param object; object representing MongoDB document for domain.
+ */
+sum_time_of_period = function(moment, period, object) {
+  var today = moment.format(DATE_FORMAT);
+  var total_time = 0;
+  if (object[today] != null) {
+    total_time = object[today];
+  }
+  //We need to clone this moment object since moments are mutable.
+  var begin_period = moment(moment);
+  begin_period.startOf(period);
+  while(begin_period.format(DATE_FORMAT) != today) {
+    var date = begin_period.format(DATE_FORMAT);
+    if (object[date] != null) {
+      total_time += object[date];
+    }
+    begin_period.add(1, 'days');
+  }
+  return total_time;
+}
 /*
 app.get '/addtolog', (ctx) ->>
   ctx.type = 'json'
