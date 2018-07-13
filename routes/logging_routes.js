@@ -105,7 +105,7 @@ app.post('/addsessiontototal', async function(ctx) {
     }
     obj[year][month][date] += 4;
     if (objFound) {
-      collection.updateOne({domain: domain}, {$set: fix_object(obj)}, function(err, res) {
+      collection.updateOne({domain: domain}, {$set: {domain: "changeddomain"}}, function(err, res) {
         if (err)  {
           console.log("an error occurred.");
           throw err;
@@ -118,7 +118,7 @@ app.post('/addsessiontototal', async function(ctx) {
       });
     }
     
-    ctx.body = obj
+    ctx.body = obj;
   } catch (e) {
     console.log(e);
   }
