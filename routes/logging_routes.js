@@ -80,7 +80,9 @@ app.post('/addsessiontototal', async function(ctx) {
   try {
     var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
     obj = await n2p(function(cb) {
+      console.log("we get here");
       collection.find({domain: domain}).toArray(cb)
+      console.log("then pass to here");
     })
     objFound = false;
     if (obj != null && obj.length > 0)  {
@@ -104,7 +106,10 @@ app.post('/addsessiontototal', async function(ctx) {
     obj[year][month][date] += 4;
     if (objFound) {
       collection.updateOne({domain: domain}, {$set: fix_object(obj)}, function(err, res) {
-        if (err) throw err;
+        if (err)  {
+          console.log("an error occurred.");
+          throw err;
+        }
         console.log("1 document updated");
       });
     } else {
