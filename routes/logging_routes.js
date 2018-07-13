@@ -91,21 +91,21 @@ app.post('/addsessiontototal', async function(ctx) {
     } else {
       obj = {domain: domain}
     }
-    year = moment().year();
+    year = moment().year() + "";
     if (obj[year] == null) {
       obj[year] = {};
     }
-    month = moment().month();
+    month = moment().month() + "";
     if (obj[year][month] == null) {
       obj[year][month] = {};
     }
-    date = moment().date();
+    date = moment().date() + "";
     if (obj[year][month][date] == null) {
       obj[year][month][date] = 0;
     }
     obj[year][month][date] += 4;
     if (objFound) {
-      collection.updateOne({domain: domain}, {$set: {domain: "changeddomain"}}, function(err, res) {
+      collection.updateOne({domain: domain}, {$set: JSON.parse(JSON.stringify())}, function(err, res) {
         if (err)  {
           console.log("an error occurred.");
           throw err;
