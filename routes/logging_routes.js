@@ -139,7 +139,7 @@ app.get('/user_external_stats', async function(ctx) {
   // To get month, we add up all previous days in the month
   begin_month = moment().startOf('month');
   var days = 0;
-  while (begin_month.format(DATE_FORMAT) != week_ago) {
+  while (begin_month.add(days, 'days').format(DATE_FORMAT) != week_ago) {
     var new_date = begin_month.add(days, 'days');
     days += 1;
     var key = new_date.format(DATE_FORMAT);
