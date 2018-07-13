@@ -115,6 +115,15 @@ app.post('/addsessiontototal', async function(ctx) {
   }
 });
 
+/**
+ * This fetches the stats necessary to display a synced, total visualziation in
+ * the app. The return object looks like this:
+ * 
+ * {
+ *  days: [time_day, time_yesterday, ..., time_6_days_ago],
+ *  weeks: [time_this_week, time_last_week, two_weeks_ago, three_weeks_ago]
+ * }
+ */
 app.get('/user_external_stats', async function(ctx) {
   // Get time spent in day, week, and month.
   const {domain, userid} = ctx.request.query;
@@ -150,14 +159,14 @@ app.get('/user_external_stats', async function(ctx) {
  * @param period: string ('week' or 'month')
  * @param object; object representing MongoDB document for domain.
  */
-sum_time_of_period = function(moment, period, object) {
-  var today = moment.format(DATE_FORMAT);
+sum_time_of_period = function(moment_obj, period, object) {
+  var today = moment_obj.format(DATE_FORMAT);
   var total_time = 0;
   if (object[today] != null) {
     total_time = object[today];
   }
   //We need to clone this moment object since moments are mutable.
-  var begin_period = moment(moment);
+  var begin_period = moment_obj(moment);
   begin_period.startOf(period);
   while(begin_period.format(DATE_FORMAT) != today) {
     var date = begin_period.format(DATE_FORMAT);
