@@ -98,7 +98,9 @@ app.post('/addsessiontototal', async function(ctx) {
       obj[year][month][date] = 0;
     }
     obj[year][month][date] += 4;
-    collection.save(fix_object(obj),cb)
+    await n2p(function(cb) {
+      collection.save(fix_object(obj),cb)
+    });
     ctx.body = obj
   } catch (e) {
     console.log(e);
