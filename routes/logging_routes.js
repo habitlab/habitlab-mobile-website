@@ -79,7 +79,12 @@ app.post('/addsessiontototal', async function(ctx) {
   const {userid} = ctx.request.body;
   try {
     var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
-    obj = {};
+    obj = collection.find();
+    if (obj != null && obj.length > 0)  {
+      obj = [0]
+    } else {
+      obj = {}
+    }
     year = moment().year();
     if (obj[year] == null) {
       obj[year] = {};
@@ -93,6 +98,7 @@ app.post('/addsessiontototal', async function(ctx) {
       obj[year][month][date] = 0;
     }
     obj[year][month][date] += 4;
+    collection.save(fix_object(obj),cb)
     ctx.body = obj
   } catch (e) {
     console.log(e);
