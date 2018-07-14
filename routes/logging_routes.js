@@ -17,6 +17,29 @@ const {
   fix_object,
 } = require('libs/server_common');
 
+var get_secret = require('getsecret');
+
+const CLIENT_ID_ANDROID = get_secret('CLIENT_ID_ANDROID');
+const CLIENT_ID_EXTENSION = get_secret('CLIENT_ID_EXTENSION');
+
+const {OAuth2Client} = require('google-auth-library');
+const android_client = new OAuth2Client(CLIENT_ID_ANDROID);
+const extension_client = new OAuth2Client(CLIENT_ID_EXTENSION)
+
+async function verify(client, token) {
+  const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: [CLIENT_ID_ANDROID, CLIENT_ID_EXTENSION],  // Specify the CLIENT_ID of the app that accesses the backend
+      // Or, if multiple clients access the backend:
+      //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
+  });
+  const payload = ticket.getPayload();
+  console.log(JSON.stringify(payload));
+  return payload['email'];
+  // If request specified a G Suite domain:
+  //const domain = payload['hd'];
+}
+
 moment = require('moment');
 
 const n2p = require('n2p');
@@ -77,7 +100,7 @@ app.post('/addtolog', async function(ctx) {
 
 app.post('/addsessiontototal', async function(ctx) {
   ctx.type = 'json';
-  const {userid, domain} = ctx.request.body;
+  const {userid, domain, client_id} = ctx.request.body;
   try {
     var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
     var obj = await n2p(function(cb) {
@@ -115,6 +138,41 @@ app.post('/addsessiontototal', async function(ctx) {
   }
 });
 
+app.post('/register_user_with_email', async function(ctx) {
+  ctx.type = 'json'
+  const {userid, email} = ctx.request.body;
+  var [collection, db] = await get_collection("email_to_user");
+  var obj = await n2p(function(cb) {
+    collection.findOne().toArray(cb);
+  })
+  var objFound = false;
+  if (obj != null && obj.length > 0)  {
+    obj = obj[0]
+    objFound = true;
+  } else {
+    obj = {}
+  }
+  if (obj[email] == null)
+    obj[email] = [];
+  var set = new Set(obj[email]);
+  set.add(userid);
+  // MONGODB deals with arrays better than sets!
+  obj[email] = Array.from(set);
+  if (objFound) {
+    collection.updateOne({}, {$set: obj}, function(err, res) {
+      if (err)  {
+        console.log("an error occurred.");
+        throw err;
+      }
+      console.log("1 document updated");
+    });
+  } else {
+    await n2p(function(cb) {
+      collection.insert(fix_object(obj),cb);
+    });
+  }  
+});
+
 /**
  * This fetches the stats necessary to display a synced, total visualziation in
  * the app. The return object looks like this:
@@ -126,40 +184,56 @@ app.post('/addsessiontototal', async function(ctx) {
  */
 app.get('/user_external_stats', async function(ctx) {
   // Get time spent in day, week, and month.
-  const {domain, userid} = ctx.request.query;
-  console.log(userid);
-  console.log(domain);
+  const {domain, id_token, from} = ctx.request.query;
+  var client = from == "android" ? android_client : extension_client;
+  // Now, get user email from id_token
+  var email = await verify(client, id_token);
   var return_obj = {};
+  
   return_obj.days = [];
-  return_obj.weeks = [];
-  var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
-  var obj = await n2p(function(cb) {
-    collection.find({domain: domain}).toArray(cb);
-  });
-  if (obj!= null && obj.length > 0) {
-    obj = obj[0];
-  } else {
-    obj = {};
+  for (var l = 0; l < 7; l++) {
+    return_obj.days.push(0);
+    if (l < 4)
+      return_obj.weeks.push(0);
   }
-  console.log(JSON.stringify(obj));
-  time_cursor = moment();
-  for (var i = 0; i < 7; i++) {
-    var key = time_cursor.format(DATE_FORMAT);
-    console.log(key);
-    if (obj[key] != null) {
-      return_obj.days.push(obj[key]);
+  // TODO: REPLACE WITH FETCHING IDS
+  var userids = get_user_ids_from_email(email);
+  for (var k = 0; k < userids.length; k++) {
+    userid = userids[k];
+    var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
+    var obj = await n2p(function(cb) {
+      collection.find({domain: domain}).toArray(cb);
+    });
+    if (obj!= null && obj.length > 0) {
+      obj = obj[0];
     } else {
-      return_obj.days.push(0);
+      obj = {};
     }
-    time_cursor.subtract(1, 'days');
+    time_cursor = moment();
+    for (var i = 0; i < 7; i++) {
+      var key = time_cursor.format(DATE_FORMAT);
+      if (obj[key] != null) {
+        return_obj.days[i] += (obj[key]);
+      } 
+      time_cursor.subtract(1, 'days');
+    }
+    time_cursor = moment();
+    for (var j = 0; j < 4; j++) {
+      return_obj.weeks[j] += (sum_time_of_period(time_cursor, 'week', obj))
+      time_cursor.subtract(1, 'weeks');
+    }
   }
-  time_cursor = moment();
-  for (var j = 0; j < 4; j++) {
-    return_obj.weeks.push(sum_time_of_period(time_cursor, 'week', obj))
-    time_cursor.subtract(1, 'weeks');
-  }
+
+  
   ctx.body = return_obj;
 });
+
+/**
+ * @param email: email name of 
+ */
+get_user_ids_from_email = function(email) {
+  
+};
 
 /**
  * Sums total time of the designated period (month, week) so far as
@@ -184,8 +258,9 @@ sum_time_of_period = function(moment_obj, period, object) {
     }
     begin_period.add(1, 'days');
   }
-  return total_time;
+  return total_time;    
 }
+
 /*
 app.get '/addtolog', (ctx) ->>
   ctx.type = 'json'

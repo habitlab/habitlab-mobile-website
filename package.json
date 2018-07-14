@@ -16,6 +16,7 @@
     "cloudinary": "^1.9.0",
     "getsecret": "^1.0.2",
     "glob": "^7.1.2",
+    "google-auth-library": "^1.6.1",
     "gulp-livescript-async": "^3.0.2",
     "js-yaml": "^3.8.4",
     "koa": "2.2.0",
