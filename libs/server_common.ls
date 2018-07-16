@@ -166,7 +166,7 @@ export fix_object = (obj) ->
 /**
  * This function validates the from parameter to ensure it falls under the supported device types.
  */
-export valid_from(from) ->
+export valid_from = (from) ->
   return from in SUPPORTED_DEVICES
 
 const SUPPORTED_DEVICES = ['android', 'browser']
