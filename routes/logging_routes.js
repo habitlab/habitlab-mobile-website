@@ -138,39 +138,56 @@ app.post('/addsessiontototal', async function(ctx) {
   }
 });
 
+/**
+ * Registers user id with given email to allow for syncing logs across devices.
+ * In JSON request body:
+ * @param userid: id of user associated with HabitLab install.
+ * @param token: the Id Token associated with the Google Account.
+ * @param from: either "android" or "browser" 
+ */
 app.post('/register_user_with_email', async function(ctx) {
   ctx.type = 'json'
-  const {userid, email} = ctx.request.body;
-  var [collection, db] = await get_collection("email_to_user");
-  var obj = await n2p(function(cb) {
-    collection.findOne().toArray(cb);
-  })
-  var objFound = false;
-  if (obj != null && obj.length > 0)  {
-    obj = obj[0]
-    objFound = true;
-  } else {
-    obj = {}
+  const {userid, token, from} = ctx.request.body
+  // NOTE: userid is the userid associated with HabitLab install, NOT Google's user id.
+  client = android_client
+  if (from == "browser") {
+    client = extension_client
   }
-  if (obj[email] == null)
-    obj[email] = [];
-  var set = new Set(obj[email]);
-  set.add(userid);
-  // MONGODB deals with arrays better than sets!
-  obj[email] = Array.from(set);
-  if (objFound) {
-    collection.updateOne({}, {$set: obj}, function(err, res) {
-      if (err)  {
-        console.log("an error occurred.");
-        throw err;
-      }
-      console.log("1 document updated");
-    });
-  } else {
-    await n2p(function(cb) {
-      collection.insert(fix_object(obj),cb);
-    });
-  }  
+  verify(client, token).then(function(email) {
+    // The id token was valid! We have a user
+    var [collection, db] = await get_collection("email_to_user")
+    var obj = await n2p(function(cb) {
+      collection.findOne().toArray(cb)
+    })
+    var objFound = false
+    if (obj != null && obj.length > 0)  {
+      obj = obj[0]
+      objFound = true
+    } else {
+      obj = {}
+    }
+    if (obj[email] == null)
+      obj[email] = []
+    var set = new Set(obj[email])
+    set.add(userid)
+    // MONGODB deals with arrays better than sets!
+    obj[email] = Array.from(set)
+    if (objFound) {
+      collection.updateOne({}, {$set: obj}, function(err, res) {
+        if (err)  {
+          throw err
+        }
+      })
+    } else {
+      await n2p(function(cb) {
+        collection.insert(fix_object(obj),cb)
+      });  
+    }
+    ctx.body = "Sucesss! Registered user " + userid + " with " + email
+  }).catch(function(err) {
+    ctx.body = "Error. Couldn't verify Google Auth Id Token."
+  });
+    
 });
 
 /**
@@ -223,16 +240,16 @@ app.get('/user_external_stats', async function(ctx) {
       time_cursor.subtract(1, 'weeks');
     }
   }
-
-  
   ctx.body = return_obj;
 });
 
 /**
- * @param email: email name of 
+ * @param email: email of synced user.
+ * @return list of user ids correpsonding to that email.
  */
 get_user_ids_from_email = function(email) {
-  
+  // TODO
+  return [4];
 };
 
 /**
