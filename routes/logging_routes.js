@@ -242,7 +242,7 @@ app.get('/user_external_stats', async function(ctx) {
  * @return list of user ids correpsonding to that email.
  */
 app.get('/get_user_ids_from_email', async function(ctx) {
-  const {email} = ctx.request.query
+  var {email} = ctx.request.query
   email = email.replace('.','\u2024')
   var [collection,db] = await get_collection("email_to_user")
   var obj = await n2p(function(cb) {
