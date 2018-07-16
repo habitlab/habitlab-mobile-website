@@ -153,7 +153,7 @@ app.post('/register_user_with_email', async function(ctx) {
   if (from == "browser") {
     client = extension_client
   }
-  verify(client, token).then(function(email) {
+  verify(client, token).then(async function(email) {
     // The id token was valid! We have a user
     var [collection, db] = await get_collection("email_to_user")
     var obj = await n2p(function(cb) {
