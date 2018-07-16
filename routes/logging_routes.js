@@ -182,11 +182,11 @@ app.post('/register_user_with_email', async function(ctx) {
         collection.insert(fix_object(obj),cb)
       })  
     }
-    ctx.body = jsonify("Sucesss! Registered user " + userid + " with " + email)
+    ctx.body = "Sucesss! Registered user " + userid + " with " + email
   }).catch(function(err) {
-    ctx.body = jsonify("Error. Couldn't verify Google Auth Id Token.")
+    ctx.body = "Error. Couldn't verify Google Auth Id Token."
   })
-  ctx.body('What about this?')
+  ctx.body = 'What about this?'
 })
 
 /**
