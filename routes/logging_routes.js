@@ -183,7 +183,7 @@ app.post('/register_user_with_email', async function(ctx) {
         collection.insert(fix_object(obj),cb)
       })  
     }
-    ctx.body = {message: 'Sucesss! Registered user " + userid + " with " + email'}
+    ctx.body = {message: 'Sucesss! Registered user ' + userid + ' with ' + email}
   } catch(e) {
     console.log(e)
     ctx.body = 'Error' + JSON.stringify(e)
