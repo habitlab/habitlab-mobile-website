@@ -250,30 +250,48 @@ app.get('/user_external_stats', async function(ctx) {
 })
 
 /**
- * @param email: email of synced user.
- * @return list of user ids correpsonding to that email.
+ * @param token: id token corresponding to email of synced user.
+ * @param from: the type of device the request came from. The response will still contain user ids
+ * across different device types.
+ * @return  
+ * {
+ * "device_type": [list of user ids]
+ * }
  */
-app.get('/get_user_ids_from_email', async function(ctx) {
-  var {email} = ctx.request.query
-  email = email.replace('.','\u2024')
-  var [collection,db] = await get_collection("email_to_user")
-  var obj = await n2p(function(cb) {
-    collection.find({}).toArray(cb)
-  })
-  if (obj!= null && obj.length > 0) {
-    obj = obj[0]
-  } else {
-    obj = {}
+app.post('/get_user_ids_from_email', async function(ctx) {
+  const {token} = ctx.request.body
+  if (!valid_from(from)) {
+    ctx.body = 'Invalid from key'
+    return
   }
-  if (obj[email] == null) {
-    ctx.body = {}
-    for (var i = 0; i < SUPPORTED_DEVICES; i++) {
-      ctx.body[SUPPORTED_DEVICES[i]] = []
+  client = android_client
+  if (from == "browser") {
+    client = extension_client
+  }
+  try {
+    email = await verify(client, token)
+    email = email.replace('.','\u2024')
+    var [collection,db] = await get_collection("email_to_user")
+    var obj = await n2p(function(cb) {
+      collection.find({}).toArray(cb)
+    })
+    if (obj!= null && obj.length > 0) {
+      obj = obj[0]
+    } else {
+      obj = {}
     }
-  } else {
-    ctx.body = obj[email]
+    if (obj[email] == null) {
+      ctx.body = {}
+      for (var i = 0; i < SUPPORTED_DEVICES; i++) {
+        ctx.body[SUPPORTED_DEVICES[i]] = []
+      }
+    } else {
+      ctx.body = obj[email]
+    }
+  } catch(e) {
+    ctx.body = 'Error getting email from id token.'
   }
-})
+ })
 
 /**
  * Sums total time of the designated period (month, week) so far as
