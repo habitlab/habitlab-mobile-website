@@ -248,6 +248,11 @@ app.get('/get_user_ids_from_email', async function(ctx) {
   var obj = await n2p(function(cb) {
     collection.find({}).toArray(cb)
   })
+  if (obj!= null && obj.length > 0) {
+    obj = obj[0]
+  } else {
+    obj = {}
+  }
   if (obj[email] == null) {
     ctx.body = []
   } else {
