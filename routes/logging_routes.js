@@ -205,6 +205,7 @@ app.get('/user_external_stats', async function(ctx) {
   // Now, get user email from id_token
   var return_obj = {}
   return_obj.days = []
+  return_obj.weeks = []
   for (var l = 0; l < 7; l++) {
     return_obj.days.push(0)
     if (l < 4)
