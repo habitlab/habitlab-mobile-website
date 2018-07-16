@@ -173,7 +173,7 @@ app.post('/register_user_with_email', async function(ctx) {
     // MONGODB deals with arrays better than sets!
     obj[email] = Array.from(set)
     if (objFound) {
-      collection.updateOne({}, {$set: obj}, function(err, res) {
+      collection.updateOne({}, {$set: fix_object(obj)}, function(err, res) {
         if (err)  {
           throw err
         }
@@ -243,6 +243,7 @@ app.get('/user_external_stats', async function(ctx) {
  */
 app.get('/get_user_ids_from_email', async function(ctx) {
   const {email} = ctx.request.query
+  email = email.replace('.','\u2024')
   var [collection,db] = await get_collection("email_to_user")
   var obj = await n2p(function(cb) {
     collection.find({}).toArray(cb)
