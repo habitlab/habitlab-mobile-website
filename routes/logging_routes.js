@@ -198,7 +198,7 @@ app.post('/register_user_with_email', async function(ctx) {
     }
   } catch(e) {
     console.log(e)
-    ctx.body = 'Error' + JSON.stringify(e)
+    ctx.body = 'Error. Perhaps your token is outdated?'
   }
 })
 

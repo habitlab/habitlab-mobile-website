@@ -169,5 +169,5 @@ export fix_object = (obj) ->
 export valid_from = (from) ->
   return from in SUPPORTED_DEVICES
 
-const SUPPORTED_DEVICES = ['android', 'browser']
+export const SUPPORTED_DEVICES = ['android', 'browser']
 require('libs/globals').add_globals(module.exports)
