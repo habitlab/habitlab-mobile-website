@@ -240,9 +240,15 @@ app.get('/user_external_stats', async function(ctx) {
  * @param email: email of synced user.
  * @return list of user ids correpsonding to that email.
  */
-get_user_ids_from_email = function(email) {
-  // TODO
-  return [4]
+app.get('/get_user_ids_from_email', async function(ctx) {
+  const {email} = ctx.request.query
+  var obj = await n2p(function(cb) {
+    collection.find({}).toArray(cb)
+  })
+  if (obj[email] == null) {
+    return []
+  }
+  return obj[email]
 }
 
 /**
