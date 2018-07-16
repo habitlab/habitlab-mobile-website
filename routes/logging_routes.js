@@ -259,7 +259,7 @@ app.get('/user_external_stats', async function(ctx) {
  * }
  */
 app.post('/get_user_ids_from_email', async function(ctx) {
-  const {token} = ctx.request.body
+  const {token, from } = ctx.request.body
   if (!valid_from(from)) {
     ctx.body = 'Invalid from key'
     return
