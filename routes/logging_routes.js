@@ -246,9 +246,10 @@ app.get('/get_user_ids_from_email', async function(ctx) {
     collection.find({}).toArray(cb)
   })
   if (obj[email] == null) {
-    return []
+    ctx.body = []
+  } else {
+    ctx.body = obj[email]
   }
-  return obj[email]
 }
 
 /**
