@@ -188,15 +188,14 @@ app.post('/register_user_with_email', async function(ctx) {
       collection.updateOne({}, {$set: obj}, function(err, res) {
         if (err)  {
           throw err
-        }
-        ctx.body = {message: 'Sucesss! Registered user ' + userid + ' with ' + email}
+        }  
       })
     } else {
       await n2p(function(cb) {
         collection.insert(fix_object(obj),cb)
       })  
-      ctx.body = {message: 'Sucesss! Registered user ' + userid + ' with ' + email}
     }
+    ctx.body = 'Sucesss! Registered user ' + userid + ' with ' + email
   } catch(e) {
     console.log(e)
     ctx.body = 'Error. Perhaps your token is outdated?'
