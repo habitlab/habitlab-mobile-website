@@ -15,6 +15,8 @@ const {
   need_query_properties,
   get_webvisits,
   fix_object,
+  valid_from,
+  SUPPORTED_DEVICES
 } = require('libs/server_common')
 
 var get_secret = require('getsecret')
@@ -98,9 +100,15 @@ app.post('/addtolog', async function(ctx) {
   ctx.body = JSON.stringify({response: 'success', success: true})
 })
 
+/**
+ * In JSON request body:
+ * @param userid: id of user
+ * @param domain: domain of session (i.e. 'facebook.com')
+ * @param time: duration of session in seconds.
+ */
 app.post('/addsessiontototal', async function(ctx) {
   ctx.type = 'json'
-  const {userid, domain} = ctx.request.body
+  const {userid, domain, time} = ctx.request.body
   try {
     var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
     var obj = await n2p(function(cb) {
@@ -117,9 +125,8 @@ app.post('/addsessiontototal', async function(ctx) {
     if (obj[date] == null) {
       obj[date] = 0
     }
-    obj[date] += 4
+    obj[date] += time
     if (objFound) {
-      console.log(JSON.stringify(obj))
       collection.updateOne({domain: domain}, {$set: obj}, function(err, res) {
         if (err)  {
           throw err
@@ -166,12 +173,16 @@ app.post('/register_user_with_email', async function(ctx) {
     } else {
       obj = {}
     }
-    if (obj[email] == null)
-      obj[email] = []
-    var set = new Set(obj[email])
+    if (obj[email] == null) {
+      obj[email] = {}
+      for (var i = 0; i < SUPPORTED_DEVICES.length; i++) {
+        obj[email][SUPPORTED_DEVICES[i]] = []
+      }
+    }
+    var set = new Set(obj[email][from])
     set.add(userid)
     // MONGODB deals with arrays better than sets!
-    obj[email] = Array.from(set)
+    obj[email][from] = Array.from(set)
     if (objFound) {
       collection.updateOne({}, {$set: fix_object(obj)}, function(err, res) {
         if (err)  {
@@ -201,7 +212,7 @@ app.post('/register_user_with_email', async function(ctx) {
  */
 app.get('/user_external_stats', async function(ctx) {
   // Get time spent in day, week, and month.
-  const {domain, userid, from} = ctx.request.query
+  const {domain, userid} = ctx.request.query
   // Now, get user email from id_token
   var return_obj = {}
   return_obj.days = []
@@ -254,7 +265,10 @@ app.get('/get_user_ids_from_email', async function(ctx) {
     obj = {}
   }
   if (obj[email] == null) {
-    ctx.body = []
+    ctx.body = {}
+    for (var i = 0; i < SUPPORTED_DEVICES; i++) {
+      ctx.body[SUPPORTED_DEVICES[i]] = []
+    }
   } else {
     ctx.body = obj[email]
   }

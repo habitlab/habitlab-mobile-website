@@ -163,4 +163,11 @@ export fix_object = (obj) ->
     output[k] = fix_object(v)
   return output
 
+/**
+ * This function validates the from parameter to ensure it falls under the supported device types.
+ */
+export valid_from(from) ->
+  return from in SUPPORTED_DEVICES
+
+const SUPPORTED_DEVICES = ['android', 'browser']
 require('libs/globals').add_globals(module.exports)
