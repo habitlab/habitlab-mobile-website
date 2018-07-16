@@ -243,6 +243,7 @@ app.get('/user_external_stats', async function(ctx) {
  */
 app.get('/get_user_ids_from_email', async function(ctx) {
   const {email} = ctx.request.query
+  collection = get_collection("email_to_user")
   var obj = await n2p(function(cb) {
     collection.find({}).toArray(cb)
   })
