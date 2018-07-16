@@ -250,7 +250,7 @@ app.get('/get_user_ids_from_email', async function(ctx) {
   } else {
     ctx.body = obj[email]
   }
-}
+})
 
 /**
  * Sums total time of the designated period (month, week) so far as
