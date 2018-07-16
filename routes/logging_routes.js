@@ -147,6 +147,7 @@ app.post('/register_user_with_email', async function(ctx) {
   ctx.type = 'json'
   const {userid, token, from} = ctx.request.body
   // NOTE: userid is the userid associated with HabitLab install, NOT Google's user id.
+  console.log("Token: " + token)
   client = android_client
   if (from == "browser") {
     client = extension_client
@@ -185,7 +186,7 @@ app.post('/register_user_with_email', async function(ctx) {
   }).catch(function(err) {
     ctx.body = jsonify("Error. Couldn't verify Google Auth Id Token.")
   })
-    
+  ctx.body('What about this?')
 })
 
 /**
