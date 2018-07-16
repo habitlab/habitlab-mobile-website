@@ -15,15 +15,15 @@ const {
   need_query_properties,
   get_webvisits,
   fix_object,
-} = require('libs/server_common');
+} = require('libs/server_common')
 
-var get_secret = require('getsecret');
+var get_secret = require('getsecret')
 
-const CLIENT_ID_ANDROID = get_secret('CLIENT_ID_ANDROID');
-const CLIENT_ID_EXTENSION = get_secret('CLIENT_ID_EXTENSION');
+const CLIENT_ID_ANDROID = get_secret('CLIENT_ID_ANDROID')
+const CLIENT_ID_EXTENSION = get_secret('CLIENT_ID_EXTENSION')
 
-const {OAuth2Client} = require('google-auth-library');
-const android_client = new OAuth2Client(CLIENT_ID_ANDROID);
+const {OAuth2Client} = require('google-auth-library')
+const android_client = new OAuth2Client(CLIENT_ID_ANDROID)
 const extension_client = new OAuth2Client(CLIENT_ID_EXTENSION)
 
 async function verify(client, token) {
@@ -32,18 +32,18 @@ async function verify(client, token) {
       audience: [CLIENT_ID_ANDROID, CLIENT_ID_EXTENSION],  // Specify the CLIENT_ID of the app that accesses the backend
       // Or, if multiple clients access the backend:
       //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
-  });
-  const payload = ticket.getPayload();
-  console.log(JSON.stringify(payload));
-  return payload['email'];
+  })
+  const payload = ticket.getPayload()
+  console.log(JSON.stringify(payload))
+  return payload['email']
   // If request specified a G Suite domain:
-  //const domain = payload['hd'];
+  //const domain = payload['hd']
 }
 
-moment = require('moment');
+moment = require('moment')
 
-const n2p = require('n2p');
-const DATE_FORMAT = "YYYYMMDD";
+const n2p = require('n2p')
+const DATE_FORMAT = "YYYYMMDD"
 
 app.get('/helloworld', async function(ctx) {
   let data = ctx.request.query
@@ -99,17 +99,17 @@ app.post('/addtolog', async function(ctx) {
 })
 
 app.post('/addsessiontototal', async function(ctx) {
-  ctx.type = 'json';
-  const {userid, domain, client_id} = ctx.request.body;
+  ctx.type = 'json'
+  const {userid, domain} = ctx.request.body
   try {
-    var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
+    var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
     var obj = await n2p(function(cb) {
       collection.find({domain: domain}).toArray(cb)
     })
-    var objFound = false;
+    var objFound = false
     if (obj != null && obj.length > 0)  {
       obj = obj[0]
-      objFound = true;
+      objFound = true
     } else {
       obj = {domain: domain}
     }
@@ -117,26 +117,24 @@ app.post('/addsessiontototal', async function(ctx) {
     if (obj[date] == null) {
       obj[date] = 0
     }
-    obj[date] += 4;
+    obj[date] += 4
     if (objFound) {
-      console.log(JSON.stringify(obj));
+      console.log(JSON.stringify(obj))
       collection.updateOne({domain: domain}, {$set: obj}, function(err, res) {
         if (err)  {
-          console.log("an error occurred.");
-          throw err;
+          throw err
         }
-        console.log("1 document updated");
-      });
+      })
     } else {
       await n2p(function(cb) {
-        collection.insert(fix_object(obj),cb);
-      });
+        collection.insert(fix_object(obj),cb)
+      })
     }
-    ctx.body = obj;
+    ctx.body = obj
   } catch (e) {
-    console.log(e);
+    console.log(e)
   }
-});
+})
 
 /**
  * Registers user id with given email to allow for syncing logs across devices.
@@ -181,14 +179,14 @@ app.post('/register_user_with_email', async function(ctx) {
     } else {
       await n2p(function(cb) {
         collection.insert(fix_object(obj),cb)
-      });  
+      })  
     }
-    ctx.body = "Sucesss! Registered user " + userid + " with " + email
+    ctx.body = jsonify("Sucesss! Registered user " + userid + " with " + email)
   }).catch(function(err) {
-    ctx.body = "Error. Couldn't verify Google Auth Id Token."
-  });
+    ctx.body = jsonify("Error. Couldn't verify Google Auth Id Token.")
+  })
     
-});
+})
 
 /**
  * This fetches the stats necessary to display a synced, total visualziation in
@@ -201,47 +199,40 @@ app.post('/register_user_with_email', async function(ctx) {
  */
 app.get('/user_external_stats', async function(ctx) {
   // Get time spent in day, week, and month.
-  const {domain, id_token, from} = ctx.request.query;
-  var client = from == "android" ? android_client : extension_client;
+  const {domain, userid, from} = ctx.request.query
   // Now, get user email from id_token
-  var email = await verify(client, id_token);
-  var return_obj = {};
-  
-  return_obj.days = [];
+  var return_obj = {}
+  return_obj.days = []
   for (var l = 0; l < 7; l++) {
-    return_obj.days.push(0);
+    return_obj.days.push(0)
     if (l < 4)
-      return_obj.weeks.push(0);
+      return_obj.weeks.push(0)
   }
-  // TODO: REPLACE WITH FETCHING IDS
-  var userids = get_user_ids_from_email(email);
-  for (var k = 0; k < userids.length; k++) {
-    userid = userids[k];
-    var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats");
-    var obj = await n2p(function(cb) {
-      collection.find({domain: domain}).toArray(cb);
-    });
-    if (obj!= null && obj.length > 0) {
-      obj = obj[0];
-    } else {
-      obj = {};
-    }
-    time_cursor = moment();
-    for (var i = 0; i < 7; i++) {
-      var key = time_cursor.format(DATE_FORMAT);
-      if (obj[key] != null) {
-        return_obj.days[i] += (obj[key]);
-      } 
-      time_cursor.subtract(1, 'days');
-    }
-    time_cursor = moment();
-    for (var j = 0; j < 4; j++) {
-      return_obj.weeks[j] += (sum_time_of_period(time_cursor, 'week', obj))
-      time_cursor.subtract(1, 'weeks');
-    }
+  userid = userid
+  var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
+  var obj = await n2p(function(cb) {
+    collection.find({domain: domain}).toArray(cb)
+  })
+  if (obj!= null && obj.length > 0) {
+    obj = obj[0]
+  } else {
+    obj = {}
   }
-  ctx.body = return_obj;
-});
+  time_cursor = moment()
+  for (var i = 0; i < 7; i++) {
+    var key = time_cursor.format(DATE_FORMAT)
+    if (obj[key] != null) {
+      return_obj.days[i] += (obj[key])
+    } 
+    time_cursor.subtract(1, 'days')
+  }
+  time_cursor = moment()
+  for (var j = 0; j < 4; j++) {
+    return_obj.weeks[j] += (sum_time_of_period(time_cursor, 'week', obj))
+    time_cursor.subtract(1, 'weeks')
+  }
+  ctx.body = return_obj
+})
 
 /**
  * @param email: email of synced user.
@@ -249,8 +240,8 @@ app.get('/user_external_stats', async function(ctx) {
  */
 get_user_ids_from_email = function(email) {
   // TODO
-  return [4];
-};
+  return [4]
+}
 
 /**
  * Sums total time of the designated period (month, week) so far as
@@ -260,22 +251,22 @@ get_user_ids_from_email = function(email) {
  * @param object: object representing MongoDB document for domain.
  */
 sum_time_of_period = function(moment_obj, period, object) {
-  var today = moment_obj.format(DATE_FORMAT);
-  var total_time = 0;
+  var today = moment_obj.format(DATE_FORMAT)
+  var total_time = 0
   if (object[today] != null) {
-    total_time = object[today];
+    total_time = object[today]
   }
   //We need to clone this moment object since moments are mutable.
-  var begin_period = moment(moment_obj);
-  begin_period.startOf(period);
+  var begin_period = moment(moment_obj)
+  begin_period.startOf(period)
   while(begin_period.format(DATE_FORMAT) != today) {
-    var date = begin_period.format(DATE_FORMAT);
+    var date = begin_period.format(DATE_FORMAT)
     if (object[date] != null) {
-      total_time += object[date];
+      total_time += object[date]
     }
-    begin_period.add(1, 'days');
+    begin_period.add(1, 'days')
   }
-  return total_time;    
+  return total_time    
 }
 
 /*
