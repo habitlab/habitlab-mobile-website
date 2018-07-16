@@ -152,37 +152,42 @@ app.post('/register_user_with_email', async function(ctx) {
   if (from == "browser") {
     client = extension_client
   }
-  email = await verify(client, token)
-  // The id token was valid! We have a user
-  var [collection, db] = await get_collection("email_to_user")
-  var obj = await n2p(function(cb) {
-    collection.findOne().toArray(cb)
-  })
-  var objFound = false
-  if (obj != null && obj.length > 0)  {
-    obj = obj[0]
-    objFound = true
-  } else {
-    obj = {}
-  }
-  if (obj[email] == null)
-    obj[email] = []
-  var set = new Set(obj[email])
-  set.add(userid)
-  // MONGODB deals with arrays better than sets!
-  obj[email] = Array.from(set)
-  if (objFound) {
-    collection.updateOne({}, {$set: obj}, function(err, res) {
-      if (err)  {
-        throw err
-      }
+  try {
+    email = await verify(client, token)
+    // The id token was valid! We have a user
+    var [collection, db] = await get_collection("email_to_user")
+    var obj = await n2p(function(cb) {
+      collection.find({}).toArray(cb)
     })
-  } else {
-    await n2p(function(cb) {
-      collection.insert(fix_object(obj),cb)
-    })  
+    var objFound = false
+    if (obj != null && obj.length > 0)  {
+      obj = obj[0]
+      objFound = true
+    } else {
+      obj = {}
+    }
+    if (obj[email] == null)
+      obj[email] = []
+    var set = new Set(obj[email])
+    set.add(userid)
+    // MONGODB deals with arrays better than sets!
+    obj[email] = Array.from(set)
+    if (objFound) {
+      collection.updateOne({}, {$set: obj}, function(err, res) {
+        if (err)  {
+          throw err
+        }
+      })
+    } else {
+      await n2p(function(cb) {
+        collection.insert(fix_object(obj),cb)
+      })  
+    }
+    ctx.body = "Sucesss! Registered user " + userid + " with " + email
+  } catch(e) {
+    console.log(e)
+    ctx.body = 'Error' + JSON.stringify(e)
   }
-  ctx.body = "Sucesss! Registered user " + userid + " with " + email
 })
 
 /**
