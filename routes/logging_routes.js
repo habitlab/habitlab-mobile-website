@@ -69,8 +69,7 @@ app.post('/addtolog', async function(ctx) {
   console.log(ctx.request.body)
   console.log(data)
   console.log(fix_object(data))
-  const {userid} = ctx.request.query
-  let logname = "" // Each user just has one collection, since our log object has everything for each day
+  const {userid, logname} = ctx.request.query
   try {
     var [collection,db] = await get_collection_for_user_and_logname(userid, logname)
     data.timestamp = Date.now()
