@@ -87,7 +87,7 @@ app.get('/addtolog', async function(ctx) {
 
 app.post('/addtolog', async function(ctx) {
   ctx.type = 'json'
-  let data = JSON.parse(ctx.request.body)
+  let data = ctx.request.body
   console.log(ctx.request.body)
   console.log(data)
   const {userid} = ctx.request.query
