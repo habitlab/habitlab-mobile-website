@@ -276,7 +276,8 @@ app.post('/get_user_ids_from_email', async function(ctx) {
       ctx.body = obj[email]
     }
   } catch(e) {
-    ctx.body = 'Error getting email from id token.'
+    ctx.status = 401
+    ctx.body = {message: 'Error getting email from id token.'}
   }
  })
 
