@@ -19,6 +19,8 @@ const {
   SUPPORTED_DEVICES
 } = require('libs/server_common')
 
+var crypto = require('crypto')
+
 var get_secret = require('getsecret')
 
 const CLIENT_ID_ANDROID = get_secret('CLIENT_ID_ANDROID')
@@ -154,14 +156,14 @@ app.post('/register_user_with_email', async function(ctx) {
   ctx.type = 'json'
   const {userid, token, from} = ctx.request.body
   // NOTE: userid is the userid associated with HabitLab install, NOT Google's user id.
-  console.log("Token: " + token)
   client = android_client
   if (from == "browser") {
     client = extension_client
   }
   try {
     email = await verify(client, token)
-    email = email.replace('.','\u2024')
+    // To anonymize, let's hash it with SHA-256
+    email = crypto.createHash('sha256').update(email).digest('hex');
     // The id token was valid! We have a user
     var [collection, db] = await get_collection("email_to_user")
     var obj = await n2p(function(cb) {
@@ -214,7 +216,6 @@ app.post('/register_user_with_email', async function(ctx) {
 app.get('/user_external_stats', async function(ctx) {
   // Get time spent in day, week, and month.
   const {domain, userid} = ctx.request.query
-  // Now, get user email from id_token
   var return_obj = {}
   return_obj.days = []
   return_obj.weeks = []
@@ -270,7 +271,8 @@ app.post('/get_user_ids_from_email', async function(ctx) {
   }
   try {
     email = await verify(client, token)
-    email = email.replace('.','\u2024')
+    // To anonymize, let's hash it with SHA-256
+    email = crypto.createHash('sha256').update(email).digest('hex');
     var [collection,db] = await get_collection("email_to_user")
     var obj = await n2p(function(cb) {
       collection.find({}).toArray(cb)
