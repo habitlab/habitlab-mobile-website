@@ -88,6 +88,8 @@ app.get('/addtolog', async function(ctx) {
 app.post('/addtolog', async function(ctx) {
   ctx.type = 'json'
   let data = JSON.parse(ctx.request.body)
+  console.log(ctx.request.body)
+  console.log(data)
   const {userid} = ctx.request.query
   let logname = "" // Each user just has one collection, since our log object has everything for each day
   try {
