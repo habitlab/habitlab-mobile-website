@@ -62,32 +62,10 @@ app.post('/helloworld', async function(ctx) {
   ctx.body = 'hello world from post method!! you sent the following data: ' + JSON.stringify(data)
 })
 
-app.get('/addtolog', async function(ctx) {
-  ctx.type = 'json'
-  let data = ctx.request.query
-  const {userid} = data
-  let logname = "" // Each user just has one collection, since our log object has everything for each day
-  console.log("USERID: " + userid)
-  console.log("LOGNAME: " + logname)
-  try {
-    var [collection,db] = await get_collection_for_user_and_logname(userid, logname)
-    data.timestamp = Date.now()
-    await n2p(function(cb) {
-      collection.insert(fix_object(data), cb)
-    })
-  } catch(err) {
-    console.error('error in addtolog')
-    console.error(err)
-  } finally {
-    if (db != null)
-      db.close()
-  }
-  ctx.body = JSON.stringify({response: 'hello', success: true})
-})
 
 app.post('/addtolog', async function(ctx) {
   ctx.type = 'json'
-  let data = ctx.request.body
+  let data = JSON.parse(ctx.request.body)
   console.log(ctx.request.body)
   console.log(data)
   const {userid} = ctx.request.query
