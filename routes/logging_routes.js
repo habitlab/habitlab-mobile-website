@@ -66,7 +66,9 @@ app.get('/addtolog', async function(ctx) {
   ctx.type = 'json'
   let data = ctx.request.query
   const {userid} = data
-  let logname= "" // Each user just has one collection, since our log object has everything for each day
+  let logname = "" // Each user just has one collection, since our log object has everything for each day
+  console.log("USERID: " + userid)
+  console.log("LOGNAME: " + logname)
   try {
     var [collection,db] = await get_collection_for_user_and_logname(userid, logname)
     data.timestamp = Date.now()
