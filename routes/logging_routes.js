@@ -133,7 +133,7 @@ app.post('/addsessiontototal', async function(ctx) {
  * Registers user id with given email to allow for syncing logs across devices.
  * In JSON request body:
  * @param userid: id of user associated with HabitLab install.
- * @param token: the Id Token associated with the Google Account.
+ * @param token: the Id Token associated with the Google Account. (value of token, not full response)
  * @param from: either "android" or "browser" 
  */
 app.post('/register_user_with_email', async function(ctx) {
@@ -198,40 +198,54 @@ app.post('/register_user_with_email', async function(ctx) {
  *  weeks: [time_this_week, time_last_week, two_weeks_ago, three_weeks_ago]
  * }
  */
-app.get('/user_external_stats', async function(ctx) {
+app.post('/account_external_stats', async function(ctx) {
   // Get time spent in day, week, and month.
   const {domain, userid} = ctx.request.query
   var return_obj = {}
-  return_obj.days = []
-  return_obj.weeks = []
-  for (var l = 0; l < 7; l++) {
-    return_obj.days.push(0)
-    if (l < 4)
-      return_obj.weeks.push(0)
+  return_obj.days = Array(7).fill(0)
+  return_obj.weeks = Array(4).fill(0)
+  const {token, from} = ctx.request.body
+  if (!valid_from(from)) {
+    ctx.body = 'Invalid from key'
+    return
   }
-  userid = userid
-  var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
-  var obj = await n2p(function(cb) {
-    collection.find({domain: domain}).toArray(cb)
-  })
-  if (obj!= null && obj.length > 0) {
-    obj = obj[0]
-  } else {
-    obj = {}
+  client = android_client
+  if (from == "browser") {
+    client = extension_client
   }
-  time_cursor = moment()
-  for (var i = 0; i < 7; i++) {
-    var key = time_cursor.format(DATE_FORMAT)
-    if (obj[key] != null) {
-      return_obj.days[i] += (obj[key])
-    } 
-    time_cursor.subtract(1, 'days')
+  try {
+    email = await verify(client, token)
+    user_ids = get_user_ids_from_email(email)
+    for (var i = 0; i < user_ids.length; i++) {
+      userid = user_ids[i]
+      var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
+      var obj = await n2p(function(cb) {
+        collection.find({domain: domain}).toArray(cb)
+      })
+      if (obj!= null && obj.length > 0) {
+        obj = obj[0]
+      } else {
+        obj = {}
+      }
+      time_cursor = moment()
+      for (var i = 0; i < 7; i++) {
+        var key = time_cursor.format(DATE_FORMAT)
+        if (obj[key] != null) {
+          return_obj.days[i] += (obj[key])
+        } 
+        time_cursor.subtract(1, 'days')
+      }
+      time_cursor = moment()
+      for (var j = 0; j < 4; j++) {
+        return_obj.weeks[j] += (sum_time_of_period(time_cursor, 'week', obj))
+        time_cursor.subtract(1, 'weeks')
+      }
+    }
+  } catch(e) {
+    ctx.status = 401
+    ctx.body = {message: 'Error getting email from id token.'}
   }
-  time_cursor = moment()
-  for (var j = 0; j < 4; j++) {
-    return_obj.weeks[j] += (sum_time_of_period(time_cursor, 'week', obj))
-    time_cursor.subtract(1, 'weeks')
-  }
+ 
   ctx.body = return_obj
 })
 
@@ -256,25 +270,7 @@ app.post('/get_user_ids_from_email', async function(ctx) {
   }
   try {
     email = await verify(client, token)
-    // To anonymize, let's hash it with SHA-256
-    email = crypto.createHash('sha256').update(email).digest('hex');
-    var [collection,db] = await get_collection("email_to_user")
-    var obj = await n2p(function(cb) {
-      collection.find({}).toArray(cb)
-    })
-    if (obj!= null && obj.length > 0) {
-      obj = obj[0]
-    } else {
-      obj = {}
-    }
-    if (obj[email] == null) {
-      ctx.body = {}
-      for (var i = 0; i < SUPPORTED_DEVICES; i++) {
-        ctx.body[SUPPORTED_DEVICES[i]] = []
-      }
-    } else {
-      ctx.body = obj[email]
-    }
+    get_user_ids_from_email(email)
   } catch(e) {
     ctx.status = 401
     ctx.body = {message: 'Error getting email from id token.'}
@@ -305,6 +301,29 @@ sum_time_of_period = function(moment_obj, period, object) {
     begin_period.add(1, 'days')
   }
   return total_time    
+}
+
+get_user_ids_from_email = function(email) {
+    // To anonymize, let's hash it with SHA-256
+    email = crypto.createHash('sha256').update(email).digest('hex');
+    var [collection,db] = await get_collection("email_to_user")
+    var obj = await n2p(function(cb) {
+      collection.find({}).toArray(cb)
+    })
+    if (obj!= null && obj.length > 0) {
+      obj = obj[0]
+    } else {
+      obj = {}
+    }
+    if (obj[email] == null) {
+      returnObj = {}
+      for (var i = 0; i < SUPPORTED_DEVICES; i++) {
+        returnObj[SUPPORTED_DEVICES[i]] = []
+      }
+    } else {
+      returnObj = obj[email]
+    }
+    return returnObj
 }
 
 require('libs/globals').add_globals(module.exports)
