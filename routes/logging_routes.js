@@ -38,7 +38,6 @@ async function verify(client, token) {
       //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
   })
   const payload = ticket.getPayload()
-  console.log(JSON.stringify(payload))
   return payload['email']
   // If request specified a G Suite domain:
   //const domain = payload['hd']
@@ -66,9 +65,6 @@ app.post('/helloworld', async function(ctx) {
 app.post('/addtolog', async function(ctx) {
   ctx.type = 'json'
   let data = ctx.request.body
-  console.log(ctx.request.body)
-  console.log(data)
-  console.log(fix_object(data))
   const {userid, logname} = ctx.request.query
   try {
     var [collection,db] = await get_collection_for_user_and_logname(userid, logname)
