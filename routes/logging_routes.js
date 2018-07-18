@@ -91,10 +91,11 @@ app.post('/addtolog', async function(ctx) {
  * @param userid: id of user
  * @param domain: domain of session (i.e. 'facebook.com')
  * @param time: duration of session in seconds.
+ * @param timestamp: start of session in milli since epoch (used to get date)
  */
 app.post('/addsessiontototal', async function(ctx) {
   ctx.type = 'json'
-  const {userid, domain, time} = ctx.request.body
+  const {userid, domain, time, timestamp} = ctx.request.body
   try {
     var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
     var obj = await n2p(function(cb) {
@@ -107,7 +108,9 @@ app.post('/addsessiontototal', async function(ctx) {
     } else {
       obj = {domain: domain}
     }
-    var date = moment().format(DATE_FORMAT)
+    var date = moment()
+    date.millisecond(timestamp)
+    date = date.format(DATE_FORMAT)
     if (obj[date] == null) {
       obj[date] = 0
     }
