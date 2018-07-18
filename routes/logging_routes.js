@@ -215,7 +215,7 @@ app.post('/account_external_stats', async function(ctx) {
   }
   try {
     email = await verify(client, token)
-    user_ids = get_user_ids_from_email(email)
+    user_ids = await get_user_ids_from_email(email)
     for (var i = 0; i < user_ids.length; i++) {
       userid = user_ids[i]
       var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
@@ -270,7 +270,7 @@ app.post('/get_user_ids_from_email', async function(ctx) {
   }
   try {
     email = await verify(client, token)
-    get_user_ids_from_email(email)
+    ctx.body = await get_user_ids_from_email(email)
   } catch(e) {
     ctx.status = 401
     ctx.body = {message: 'Error getting email from id token.'}
@@ -303,7 +303,7 @@ sum_time_of_period = function(moment_obj, period, object) {
   return total_time    
 }
 
-get_user_ids_from_email = function(email) {
+get_user_ids_from_email = async function(email) {
     // To anonymize, let's hash it with SHA-256
     email = crypto.createHash('sha256').update(email).digest('hex');
     var [collection,db] = await get_collection("email_to_user")
