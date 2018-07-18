@@ -85,40 +85,43 @@ app.post('/addtolog', async function(ctx) {
 /**
  * In JSON request body:
  * @param userid: id of user
- * @param domain: domain of session (i.e. 'facebook.com')
- * @param duration: duration of session in seconds.
+ * @param domains_time: an object {<domain>: <time_spent in seconds>}
  * @param timestamp: start of session in milli since epoch (used to get date)
  */
 app.post('/addsessiontototal', async function(ctx) {
   ctx.type = 'json'
-  const {userid, domain, duration, timestamp} = ctx.request.body
+  const {userid, domains_time, timestamp} = ctx.request.body
+  var date = moment(timestamp).format(DATE_FORMAT)
   try {
-    var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
-    var obj = await n2p(function(cb) {
-      collection.find({domain: domain}).toArray(cb)
-    })
-    var objFound = false
-    if (obj != null && obj.length > 0)  {
-      obj = obj[0]
-      objFound = true
-    } else {
-      obj = {domain: domain}
-    }
-    var date = moment(timestamp).format(DATE_FORMAT)
-    if (obj[date] == null) {
-      obj[date] = 0
-    }
-    obj[date] += Number(duration)
-    if (objFound) {
-      collection.updateOne({domain: domain}, {$set: obj}, function(err, res) {
-        if (err)  {
-          throw err
-        }
+    for (var domain in domains_time) {
+      var duration = domains_time[domain]
+      var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
+      var obj = await n2p(function(cb) {
+        collection.find({domain: domain}).toArray(cb)
       })
-    } else {
-      await n2p(function(cb) {
-        collection.insert(fix_object(obj),cb)
-      })
+      var objFound = false
+      if (obj != null && obj.length > 0)  {
+        obj = obj[0]
+        objFound = true
+      } else {
+        obj = {domain: domain}
+      }
+      
+      if (obj[date] == null) {
+        obj[date] = 0
+      }
+      obj[date] += Number(duration)
+      if (objFound) {
+        collection.updateOne({domain: domain}, {$set: obj}, function(err, res) {
+          if (err)  {
+            throw err
+          }
+        })
+      } else {
+        await n2p(function(cb) {
+          collection.insert(fix_object(obj),cb)
+        })
+      }
     }
     ctx.body = obj
   } catch (e) {
