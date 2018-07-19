@@ -223,9 +223,13 @@ app.post('/account_external_stats', async function(ctx) {
   }
   try {
     email = await verify(client, token)
-    user_ids = await get_user_ids_from_email(email)
+    var user_ids = await get_user_ids_from_email(email)
+    console.log(user_ids)
     user_ids = user_ids.map(function(obj){
-      return obj.id
+      if (obj.id != null) {
+        return obj.id
+      }
+      return obj
     })
     for (var j = 0; j < SUPPORTED_DEVICES.length; j++) {
       device = SUPPORTED_DEVICES[j]
