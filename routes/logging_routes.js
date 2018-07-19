@@ -207,8 +207,11 @@ app.post('/account_external_stats', async function(ctx) {
   // Get time spent in day, week, and month.
   const {domain} = ctx.request.query
   var return_obj = {}
-  return_obj.days = Array(7).fill(0)
-  return_obj.weeks = Array(4).fill(0)
+  return_obj['total'] = {days: Array(7).fill(0), weeks: Array(4).fill(0)}
+  for (var i = 0; i < SUPPORTED_DEVICES.length; i++) {
+    return_obj[SUPPORTED_DEVICES[i]] = {}
+
+  }
   const {token, from} = ctx.request.body
   if (!valid_from(from)) {
     ctx.body = 'Invalid from key'
@@ -221,38 +224,65 @@ app.post('/account_external_stats', async function(ctx) {
   try {
     email = await verify(client, token)
     user_ids = await get_user_ids_from_email(email)
-    for (var i = 0; i < user_ids.length; i++) {
-      userid = user_ids[i]
-      var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
-      var obj = await n2p(function(cb) {
-        collection.find({domain: domain}).toArray(cb)
-      })
-      if (obj!= null && obj.length > 0) {
-        obj = obj[0]
-      } else {
-        obj = {}
-      }
-      time_cursor = moment()
-      for (var i = 0; i < 7; i++) {
-        var key = time_cursor.format(DATE_FORMAT)
-        if (obj[key] != null) {
-          return_obj.days[i] += (obj[key])
-        } 
-        time_cursor.subtract(1, 'days')
-      }
-      time_cursor = moment()
-      for (var j = 0; j < 4; j++) {
-        return_obj.weeks[j] += (sum_time_of_period(time_cursor, 'week', obj))
-        time_cursor.subtract(1, 'weeks')
-      }
+    for (var j = 0; j < SUPPORTED_DEVICES.length; j++) {
+      device = SUPPORTED_DEVICES[j]
+      device_user_ids = user_ids[device]
+      for (var i = 0; i < device_user_ids.length; i++) {
+        userid = device_user_ids[i]
+        return_obj[device][userid] = await get_stats_for_user(userid, domain)
+        // We know add this to total
+        for (var k = 0; k < 7; k++) {
+          return_obj['total']['days'][k] += return_obj[device][userid][k] 
+          if (k < 4) {
+            return_obj['total']['weeks'][k] += return_obj[device][userid][k]
+          }
+        }
+      } 
     }
   } catch(e) {
     ctx.status = 401
     ctx.body = {message: 'Error getting email from id token.'}
   }
- 
   ctx.body = return_obj
 })
+
+/**
+ * Gets stats in format according to 'account_external_stats'
+ * @param user_id: string user id
+ * @param domain: domain of interest (i.e. "www.facebook.com")
+ * Returns:
+ * {
+ *  days: [time_day, time_yesterday, ..., time_6_days_ago],
+ *  weeks: [time_this_week, time_last_week, two_weeks_ago, three_weeks_ago]
+ * }
+ */
+get_stats_for_user = async function(user_id, domain) {
+  return_obj = {days: Array(7).fill(0), weeks: Array(4).fill(0)}
+  var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
+  var obj = await n2p(function(cb) {
+    collection.find({domain: domain}).toArray(cb)
+  })
+  if (obj != null && obj.length > 0) {
+    obj = obj[0]
+  } else {
+    obj = {}
+  }
+  time_cursor = moment()
+  for (var i = 0; i < 7; i++) {
+    var key = time_cursor.format(DATE_FORMAT)
+    if (obj[key] != null) {
+      return_obj.days[i] += (obj[key])
+    } 
+    time_cursor.subtract(1, 'days')
+  }
+  time_cursor = moment()
+  for (var j = 0; j < 4; j++) {
+    return_obj.weeks[j] += (sum_time_of_period(time_cursor, 'week', obj))
+    time_cursor.subtract(1, 'weeks')
+  }
+  return return_obj
+}
+
 
 /**
  * @param token: id token corresponding to email of synced user.
