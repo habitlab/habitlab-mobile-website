@@ -222,18 +222,17 @@ app.post('/account_external_stats', async function(ctx) {
     client = extension_client
   }
   try {
-    email = await verify(client, token)
+    var email = await verify(client, token)
     var user_ids = await get_user_ids_from_email(email)
-    console.log(user_ids)
-    user_ids = user_ids.map(function(obj){
-      if (obj.id != null) {
-        return obj.id
-      }
-      return obj
-    })
     for (var j = 0; j < SUPPORTED_DEVICES.length; j++) {
       device = SUPPORTED_DEVICES[j]
       device_user_ids = user_ids[device]
+      device_user_ids =  device_user_ids.map(function(obj) {
+        if (obj.id != null){
+          return obj.id
+        }
+        return obj
+      })
       for (var i = 0; i < device_user_ids.length; i++) {
         userid = device_user_ids[i]
         return_obj[device][userid] = await get_stats_for_user(userid, domain)
