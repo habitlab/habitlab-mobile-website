@@ -195,7 +195,7 @@ app.post('/register_user_with_email', async function(ctx) {
  * As query params:
  * @param domain: name of domain you want stats  of (i.e. "www.facebook.com")
  * @param token: token id of Google Account
- * @param from: either "browser or "android"
+ * @param from: either "browser or "android" (just to determine which client to use)
  * This fetches the stats necessary to display a synced, total visualziation in
  * the app. The return object looks like this:
  * {
