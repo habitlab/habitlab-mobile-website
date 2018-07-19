@@ -85,7 +85,7 @@ app.post('/addtolog', async function(ctx) {
 /**
  * In JSON request body:
  * @param userid: id of user
- * @param domains_time: an object {<domain>: <time_spent in seconds>}
+ * @param domains_time: {<domain>: <time_spent in seconds>}
  * @param timestamp: start of session in milli since epoch (used to get date)
  */
 app.post('/addsessiontototal', async function(ctx) {
@@ -191,9 +191,13 @@ app.post('/register_user_with_email', async function(ctx) {
 })
 
 /**
+ * Gives total time spent across devices for a given doamin and Google Account
+ * As query params:
+ * @param domain: name of domain you want stats  of (i.e. "www.facebook.com")
+ * @param token: token id of Google Account
+ * @param from: either "browser or "android"
  * This fetches the stats necessary to display a synced, total visualziation in
  * the app. The return object looks like this:
- * 
  * {
  *  days: [time_day, time_yesterday, ..., time_6_days_ago],
  *  weeks: [time_this_week, time_last_week, two_weeks_ago, three_weeks_ago]
@@ -201,7 +205,7 @@ app.post('/register_user_with_email', async function(ctx) {
  */
 app.post('/account_external_stats', async function(ctx) {
   // Get time spent in day, week, and month.
-  const {domain, userid} = ctx.request.query
+  const {domain} = ctx.request.query
   var return_obj = {}
   return_obj.days = Array(7).fill(0)
   return_obj.weeks = Array(4).fill(0)
