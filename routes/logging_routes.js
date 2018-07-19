@@ -243,6 +243,7 @@ app.post('/account_external_stats', async function(ctx) {
       } 
     }
   } catch(e) {
+    console.log(e)
     ctx.status = 401
     ctx.body = {message: 'Error getting email from id token.'}
   }
