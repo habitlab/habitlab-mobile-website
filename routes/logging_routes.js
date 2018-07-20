@@ -236,7 +236,7 @@ app.post('/account_external_stats', async function(ctx) {
         userid = device_user_ids[i]
         return_obj[device][userid] = await get_stats_for_user(userid, domain)
         // We know add this to total
-        console.log("Now adding from " + user_id + " in device " + device )
+        console.log("Now adding from " + userid + " in device " + device )
         for (var k = 0; k < 7; k++) {
           console.log("Now adding " + return_obj[device][userid]['days'][k] )
           return_obj['total']['days'][k] += return_obj[device][userid]['days'][k] 
