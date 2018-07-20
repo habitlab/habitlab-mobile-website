@@ -238,6 +238,7 @@ app.post('/account_external_stats', async function(ctx) {
         // We know add this to total
         console.log("Now adding from " + user_id + " in device " + device )
         for (var k = 0; k < 7; k++) {
+          console.log("Now adding " + return_obj[device][userid]['days'][k] )
           return_obj['total']['days'][k] += return_obj[device][userid]['days'][k] 
           if (k < 4) {
             return_obj['total']['weeks'][k] += return_obj[device][userid]['weeks'][k]
