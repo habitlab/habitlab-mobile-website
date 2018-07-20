@@ -110,6 +110,7 @@ app.post('/addsessiontototal', async function(ctx) {
       if (obj[date] == null) {
         obj[date] = 0
       }
+      console.log("Updating time from " + obj[date] +  " to " + (obj[date] + Number(duration)))
       obj[date] += Number(duration)
       if (objFound) {
         collection.updateOne({domain: domain}, {$set: obj}, function(err, res) {
@@ -211,7 +212,6 @@ app.post('/account_external_stats', async function(ctx) {
     return_obj[SUPPORTED_DEVICES[i]] = {}
 
   }
-  console.log(return_obj['total'])
   const {token, from, domain} = ctx.request.body
   if (!valid_from(from)) {
     ctx.body = 'Invalid from key'
@@ -238,7 +238,6 @@ app.post('/account_external_stats', async function(ctx) {
         return_obj[device][userid] = await get_stats_for_user(userid, domain)
         // We know add this to total
         for (var k = 0; k < 7; k++) {
-          console.log("returnobj[device][userid] " + return_obj[device][userid][k] )
           return_obj['total']['days'][k] += return_obj[device][userid]['days'][k] 
           if (k < 4) {
             return_obj['total']['weeks'][k] += return_obj[device][userid]['weeks'][k]
@@ -267,7 +266,6 @@ app.post('/account_external_stats', async function(ctx) {
 get_stats_for_user = async function(user_id, domain) {
   return_obj = {days: Array(7).fill(0), weeks: Array(4).fill(0)}
   var [collection, db] = await get_collection_for_user_and_logname(user_id, "domain_stats")
-  console.log(domain)
   var obj = await n2p(function(cb) {
     collection.find({domain: domain}).toArray(cb)
   })
@@ -276,11 +274,9 @@ get_stats_for_user = async function(user_id, domain) {
   } else {
     obj = {}
   }
-  console.log(obj)
   time_cursor = moment()
   for (var i = 0; i < 7; i++) {
     var key = time_cursor.format(DATE_FORMAT)
-    console.log(key + " " + obj[key])
     if (obj[key] != null) {
       return_obj.days[i] += (obj[key])
     } 
@@ -288,7 +284,6 @@ get_stats_for_user = async function(user_id, domain) {
   }
   time_cursor = moment()
   for (var j = 0; j < 4; j++) {
-    console.log(obj[key])
     return_obj.weeks[j] += (sum_time_of_period(time_cursor, 'week', obj))
     time_cursor.subtract(1, 'weeks')
   }
