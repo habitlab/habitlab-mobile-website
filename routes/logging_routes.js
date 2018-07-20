@@ -274,10 +274,11 @@ get_stats_for_user = async function(user_id, domain) {
   } else {
     obj = {}
   }
+  console.log(obj)
   time_cursor = moment()
   for (var i = 0; i < 7; i++) {
     var key = time_cursor.format(DATE_FORMAT)
-    console.log(obj[key])
+    console.log(key + " " + obj[key])
     if (obj[key] != null) {
       return_obj.days[i] += (obj[key])
     } 
