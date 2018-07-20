@@ -205,14 +205,13 @@ app.post('/register_user_with_email', async function(ctx) {
  */
 app.post('/account_external_stats', async function(ctx) {
   // Get time spent in day, week, and month.
-  const {domain} = ctx.request.query
   var return_obj = {}
   return_obj['total'] = {days: Array(7).fill(0), weeks: Array(4).fill(0)}
   for (var i = 0; i < SUPPORTED_DEVICES.length; i++) {
     return_obj[SUPPORTED_DEVICES[i]] = {}
 
   }
-  const {token, from} = ctx.request.body
+  const {token, from, domain} = ctx.request.body
   if (!valid_from(from)) {
     ctx.body = 'Invalid from key'
     return
@@ -266,6 +265,7 @@ app.post('/account_external_stats', async function(ctx) {
 get_stats_for_user = async function(user_id, domain) {
   return_obj = {days: Array(7).fill(0), weeks: Array(4).fill(0)}
   var [collection, db] = await get_collection_for_user_and_logname(user_id, "domain_stats")
+  console.log(domain)
   var obj = await n2p(function(cb) {
     collection.find({domain: domain}).toArray(cb)
   })
