@@ -227,7 +227,7 @@ app.post('/account_external_stats', async function(ctx) {
     for (var j = 0; j < SUPPORTED_DEVICES.length; j++) {
       device = SUPPORTED_DEVICES[j]
       device_user_ids = user_ids[device]
-      device_user_ids =  device_user_ids.map(function(obj) {
+      device_user_ids = device_user_ids.map(function(obj) {
         if (obj.id != null){
           return obj.id
         }
@@ -265,7 +265,7 @@ app.post('/account_external_stats', async function(ctx) {
  */
 get_stats_for_user = async function(user_id, domain) {
   return_obj = {days: Array(7).fill(0), weeks: Array(4).fill(0)}
-  var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
+  var [collection, db] = await get_collection_for_user_and_logname(user_id, "domain_stats")
   var obj = await n2p(function(cb) {
     collection.find({domain: domain}).toArray(cb)
   })
