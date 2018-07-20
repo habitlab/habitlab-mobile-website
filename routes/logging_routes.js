@@ -277,6 +277,7 @@ get_stats_for_user = async function(user_id, domain) {
   time_cursor = moment()
   for (var i = 0; i < 7; i++) {
     var key = time_cursor.format(DATE_FORMAT)
+    console.log(obj[key])
     if (obj[key] != null) {
       return_obj.days[i] += (obj[key])
     } 
@@ -284,6 +285,7 @@ get_stats_for_user = async function(user_id, domain) {
   }
   time_cursor = moment()
   for (var j = 0; j < 4; j++) {
+    console.log(obj[key])
     return_obj.weeks[j] += (sum_time_of_period(time_cursor, 'week', obj))
     time_cursor.subtract(1, 'weeks')
   }
