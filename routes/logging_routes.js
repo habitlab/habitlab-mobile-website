@@ -239,9 +239,9 @@ app.post('/account_external_stats', async function(ctx) {
         // We know add this to total
         for (var k = 0; k < 7; k++) {
           console.log("returnobj[device][userid] " + return_obj[device][userid][k] )
-          return_obj['total']['days'][k] += return_obj[device][userid][k] 
+          return_obj['total']['days'][k] += return_obj[device][userid]['days'][k] 
           if (k < 4) {
-            return_obj['total']['weeks'][k] += return_obj[device][userid][k]
+            return_obj['total']['weeks'][k] += return_obj[device][userid]['weeks'][k]
           }
         }
       } 
