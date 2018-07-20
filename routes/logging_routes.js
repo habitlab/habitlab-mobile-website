@@ -92,7 +92,7 @@ app.post('/addsessiontototal', async function(ctx) {
   ctx.type = 'json'
   const {userid, domains_time, timestamp} = ctx.request.body
   var date = moment(timestamp).format(DATE_FORMAT)
-  console.log("domains_time: " + domains_time)
+  console.log("domains_time: " + JSON.stringify(domains_time))
   try {
     for (var domain in domains_time) {
       var duration = domains_time[domain]
