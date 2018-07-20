@@ -92,7 +92,6 @@ app.post('/addsessiontototal', async function(ctx) {
   ctx.type = 'json'
   const {userid, domains_time, timestamp} = ctx.request.body
   var date = moment(timestamp).format(DATE_FORMAT)
-  console.log("domains_time: " + JSON.stringify(domains_time))
   try {
     for (var domain in domains_time) {
       var duration = domains_time[domain]
@@ -111,7 +110,6 @@ app.post('/addsessiontototal', async function(ctx) {
       if (obj[date] == null) {
         obj[date] = 0
       }
-      console.log("Updating time from " + obj[date] +  " to " + (obj[date] + Number(duration)))
       obj[date] += Number(duration)
       if (objFound) {
         collection.updateOne({domain: domain}, {$set: obj}, function(err, res) {
@@ -128,7 +126,7 @@ app.post('/addsessiontototal', async function(ctx) {
     ctx.body = obj
   } catch (e) {
     console.log(e)
-  }
+  } 
 })
 
 /**
@@ -238,6 +236,7 @@ app.post('/account_external_stats', async function(ctx) {
         userid = device_user_ids[i]
         return_obj[device][userid] = await get_stats_for_user(userid, domain)
         // We know add this to total
+        console.log("Now adding from " + user_id + " in device " + device )
         for (var k = 0; k < 7; k++) {
           return_obj['total']['days'][k] += return_obj[device][userid]['days'][k] 
           if (k < 4) {
