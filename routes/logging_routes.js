@@ -135,7 +135,6 @@ app.post('/addsessiontototal', async function(ctx) {
  * @param userid: id of user associated with HabitLab install.
  * @param token: the Id Token associated with the Google Account. (value of token, not full response)
  * @param from: either "android" or "browser" 
- * @param type: "monitoring" or "intervention"
  */
 app.post('/register_user_with_email', async function(ctx) {
   ctx.type = 'json'
@@ -168,7 +167,7 @@ app.post('/register_user_with_email', async function(ctx) {
       }
     }
     var set = new Set(obj[email][from])
-    set.add({id: userid, type: type})
+    set.add(id)
     // MONGODB deals with arrays better than sets!
     obj[email][from] = Array.from(set)
     if (objFound) {
