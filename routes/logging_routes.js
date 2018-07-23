@@ -167,7 +167,7 @@ app.post('/register_user_with_email', async function(ctx) {
       }
     }
     var set = new Set(obj[email][from])
-    set.add(id)
+    set.add(userid)
     // MONGODB deals with arrays better than sets!
     obj[email][from] = Array.from(set)
     if (objFound) {
