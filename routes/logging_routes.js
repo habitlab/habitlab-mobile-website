@@ -25,15 +25,17 @@ var get_secret = require('getsecret')
 
 const CLIENT_ID_ANDROID = get_secret('CLIENT_ID_ANDROID')
 const CLIENT_ID_EXTENSION = get_secret('CLIENT_ID_EXTENSION')
+const CLIENT_ID_ANDROID_PROD = get_secret('CLIENT_ID_ANDROID_PRODUCTION')
 
 const {OAuth2Client} = require('google-auth-library')
 const android_client = new OAuth2Client(CLIENT_ID_ANDROID)
 const extension_client = new OAuth2Client(CLIENT_ID_EXTENSION)
+const android_client2 = new OAuth2Client(CLIENT_ID_ANDROID_PROD)
 
 async function verify(client, token) {
   const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: [CLIENT_ID_ANDROID, CLIENT_ID_EXTENSION],  // Specify the CLIENT_ID of the app that accesses the backend
+      audience: [CLIENT_ID_ANDROID, CLIENT_ID_EXTENSION, CLIENT_ID_ANDROID_PROD],  // Specify the CLIENT_ID of the app that accesses the backend
       // Or, if multiple clients access the backend:
       //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
   })
@@ -95,7 +97,8 @@ app.post('/addsessiontototal', async function(ctx) {
   try {
     for (var domain in domains_time) {
       var duration = domains_time[domain]
-      var [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
+      var [collection, db] = await get_collection_for_user_and_logname(userid,
+        "domain_stats")
       var obj = await n2p(function(cb) {
         collection.find({domain: domain}).toArray(cb)
       })
@@ -140,7 +143,7 @@ app.post('/register_user_with_email', async function(ctx) {
   ctx.type = 'json'
   const {userid, token, type, from} = ctx.request.body
   // NOTE: userid is the userid associated with HabitLab install, NOT Google's user id.
-  client = android_client
+  client = android_client2
   if (from == "browser") {
     client = extension_client
   }
@@ -216,7 +219,7 @@ app.post('/account_external_stats', async function(ctx) {
     ctx.body = 'Invalid from key'
     return
   }
-  client = android_client
+  client = android_client2
   if (from == "browser") {
     client = extension_client
   }
@@ -307,7 +310,7 @@ app.post('/get_user_ids_from_email', async function(ctx) {
     ctx.body = 'Invalid from key'
     return
   }
-  client = android_client
+  client = android_client2
   if (from == "browser") {
     client = extension_client
   }
