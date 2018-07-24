@@ -282,7 +282,7 @@ get_stats_for_user = async function(user_id, domain) {
   }
   time_cursor = moment()
   for (var j = 0; j < 4; j++) {
-    return_obj.weeks[j] += (sum_time_of_period(time_cursor, 'week', obj))
+    return_obj.weeks[j] += (sum_time_of_period(time_cursor, 7, obj))
     time_cursor.subtract(1, 'weeks')
   }
   return return_obj
@@ -321,10 +321,10 @@ app.post('/get_user_ids_from_email', async function(ctx) {
  * Sums total time of the designated period (month, week) so far as
  * noted in DB.
  * @param moment_obj: moment object representing the period you want to sum to
- * @param period: string ('week' or 'month')
+ * @param days_of_period: number of days contained in period.
  * @param object: object representing MongoDB document for domain.
  */
-sum_time_of_period = function(moment_obj, period, object) {
+sum_time_of_period = function(moment_obj, days_of_period, object) {
   var today = moment_obj.format(DATE_FORMAT)
   var total_time = 0
   if (object[today] != null) {
@@ -332,13 +332,14 @@ sum_time_of_period = function(moment_obj, period, object) {
   }
   //We need to clone this moment object since moments are mutable.
   var begin_period = moment(moment_obj)
-  begin_period.startOf(period)
+  begin_period.subtract(7, 'days')
   console.log("summing this time period: " + period)
   console.log("Begin: " + begin_period.format(DATE_FORMAT))
   while(begin_period.format(DATE_FORMAT) != today) {
     var date = begin_period.format(DATE_FORMAT)
     console.log("adding this date: " + date)
     if (object[date] != null) {
+      console.log("non null object: " + object[date])
       total_time += object[date]
     }
     begin_period.add(1, 'days')
