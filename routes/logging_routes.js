@@ -211,7 +211,7 @@ app.post('/account_external_stats', async function(ctx) {
   for (var i = 0; i < SUPPORTED_DEVICES.length; i++) {
     return_obj[SUPPORTED_DEVICES[i]] = {}
   }
-  const {token, from, domain} = ctx.request.body
+  const {token, from, domain, timestamp} = ctx.request.body
   if (!valid_from(from)) {
     ctx.body = 'Invalid from key'
     return
