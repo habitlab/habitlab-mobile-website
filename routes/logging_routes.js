@@ -195,6 +195,8 @@ app.post('/register_user_with_email', async function(ctx) {
  * @param domain: name of domain you want stats  of (i.e. "www.facebook.com")
  * @param token: token id of Google Account
  * @param from: either "browser or "android" (just to determine which client to use)
+ * @param timestamp: the timestamp of the client relative to its timezone
+ *                    so we can correctly reference the desired dates.
  * This fetches the stats necessary to display a synced, total visualziation in
  * the app. The return object looks like this:
  * {
@@ -208,7 +210,6 @@ app.post('/account_external_stats', async function(ctx) {
   return_obj['total'] = {days: Array(7).fill(0), weeks: Array(4).fill(0)}
   for (var i = 0; i < SUPPORTED_DEVICES.length; i++) {
     return_obj[SUPPORTED_DEVICES[i]] = {}
-
   }
   const {token, from, domain} = ctx.request.body
   if (!valid_from(from)) {
@@ -255,13 +256,15 @@ app.post('/account_external_stats', async function(ctx) {
  * Gets stats in format according to 'account_external_stats'
  * @param user_id: string user id
  * @param domain: domain of interest (i.e. "www.facebook.com")
+ * @param timestamp: the timestamp of the client relative to its timezone
+ *                    so we can correctly reference the desired dates.
  * Returns:
  * {
  *  days: [time_day, time_yesterday, ..., time_6_days_ago],
  *  weeks: [time_this_week, time_last_week, two_weeks_ago, three_weeks_ago]
  * }
  */
-get_stats_for_user = async function(user_id, domain) {
+get_stats_for_user = async function(user_id, domain, timestamp) {
   return_obj = {days: Array(7).fill(0), weeks: Array(4).fill(0)}
   var [collection, db] = await get_collection_for_user_and_logname(user_id, "domain_stats")
   var obj = await n2p(function(cb) {
@@ -272,7 +275,7 @@ get_stats_for_user = async function(user_id, domain) {
   } else {
     obj = {}
   }
-  time_cursor = moment()
+  time_cursor = moment(timestamp)
   for (var i = 0; i < 7; i++) {
     var key = time_cursor.format(DATE_FORMAT)
     if (obj[key] != null) {
@@ -280,7 +283,7 @@ get_stats_for_user = async function(user_id, domain) {
     }
     time_cursor.subtract(1, 'days')
   }
-  time_cursor = moment()
+  time_cursor = moment(timestamp)
   for (var j = 0; j < 4; j++) {
     return_obj.weeks[j] += (sum_time_of_period(time_cursor, 7, obj))
     time_cursor.subtract(1, 'weeks')
