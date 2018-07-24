@@ -106,7 +106,7 @@ app.post('/addsessiontototal', async function(ctx) {
       } else {
         obj = {domain: domain}
       }
-      
+
       if (obj[date] == null) {
         obj[date] = 0
       }
@@ -126,7 +126,7 @@ app.post('/addsessiontototal', async function(ctx) {
     ctx.body = obj
   } catch (e) {
     console.log(e)
-  } 
+  }
 })
 
 /**
@@ -134,7 +134,7 @@ app.post('/addsessiontototal', async function(ctx) {
  * In JSON request body:
  * @param userid: id of user associated with HabitLab install.
  * @param token: the Id Token associated with the Google Account. (value of token, not full response)
- * @param from: either "android" or "browser" 
+ * @param from: either "android" or "browser"
  */
 app.post('/register_user_with_email', async function(ctx) {
   ctx.type = 'json'
@@ -174,12 +174,12 @@ app.post('/register_user_with_email', async function(ctx) {
       collection.updateOne({}, {$set: obj}, function(err, res) {
         if (err)  {
           throw err
-        }  
+        }
       })
     } else {
       await n2p(function(cb) {
         collection.insert(fix_object(obj),cb)
-      })  
+      })
     }
     ctx.body = {message: 'Sucesss! Registered user ' + userid + ' with ' + email}
   } catch(e) {
@@ -236,12 +236,12 @@ app.post('/account_external_stats', async function(ctx) {
         return_obj[device][userid] = await get_stats_for_user(userid, domain)
         // We know add this to total
         for (var k = 0; k < 7; k++) {
-          return_obj['total']['days'][k] += return_obj[device][userid]['days'][k] 
+          return_obj['total']['days'][k] += return_obj[device][userid]['days'][k]
           if (k < 4) {
             return_obj['total']['weeks'][k] += return_obj[device][userid]['weeks'][k]
           }
         }
-      } 
+      }
     }
   } catch(e) {
     console.log(e)
@@ -277,7 +277,7 @@ get_stats_for_user = async function(user_id, domain) {
     var key = time_cursor.format(DATE_FORMAT)
     if (obj[key] != null) {
       return_obj.days[i] += (obj[key])
-    } 
+    }
     time_cursor.subtract(1, 'days')
   }
   time_cursor = moment()
@@ -293,7 +293,7 @@ get_stats_for_user = async function(user_id, domain) {
  * @param token: id token corresponding to email of synced user.
  * @param from: the type of device the request came from. The response will still contain user ids
  * across different device types.
- * @return  
+ * @return
  * {
  * "device_type": [list of user ids]
  * }
@@ -333,14 +333,18 @@ sum_time_of_period = function(moment_obj, period, object) {
   //We need to clone this moment object since moments are mutable.
   var begin_period = moment(moment_obj)
   begin_period.startOf(period)
+  console.log("summing this time period: " + period)
+  console.log("Begin: " + begin_period.format(DATE_FORMAT))
   while(begin_period.format(DATE_FORMAT) != today) {
     var date = begin_period.format(DATE_FORMAT)
+    console.log("adding this date: " + date)
     if (object[date] != null) {
       total_time += object[date]
     }
     begin_period.add(1, 'days')
   }
-  return total_time    
+  console.log("End of period: " + begin_period.format(DATE_FORMAT))
+  return total_time
 }
 
 get_user_ids_from_email = async function(email) {
