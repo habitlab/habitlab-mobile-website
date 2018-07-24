@@ -333,17 +333,13 @@ sum_time_of_period = function(moment_obj, days_of_period, object) {
   //We need to clone this moment object since moments are mutable.
   var begin_period = moment(moment_obj)
   begin_period.subtract(days_of_period, 'days')
-  console.log("Begin: " + begin_period.format(DATE_FORMAT))
   while(begin_period.format(DATE_FORMAT) != today) {
     var date = begin_period.format(DATE_FORMAT)
-    console.log("adding this date: " + date)
     if (object[date] != null) {
-      console.log("non null object: " + object[date])
       total_time += object[date]
     }
     begin_period.add(1, 'days')
   }
-  console.log("End of period: " + begin_period.format(DATE_FORMAT))
   return total_time
 }
 
