@@ -86,6 +86,14 @@ app.post('/addtolog', async function(ctx) {
   ctx.body = JSON.stringify({response: 'success', success: true})
 })
 
+app.post('/givefeedback', async function(ctx) {
+  ctx.type = 'json'
+  var [collection, db] = await get_collection("feedback")
+  await n2p(function(cb) {
+    collection.insert(fix_object(ctx.request.body), cb)
+  })
+})
+
 /**
  * In JSON request body:
  * @param userid: id of user
