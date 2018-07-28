@@ -29,7 +29,7 @@ const CLIENT_ID_ANDROID_PROD = get_secret('CLIENT_ID_ANDROID_PRODUCTION')
 
 const {OAuth2Client} = require('google-auth-library')
 const android_client = new OAuth2Client(CLIENT_ID_ANDROID)
-const extension_client = new OAuth2Client(CLIENT_IDS_EXTENSION[0])
+const extension_client = new OAuth2Client(CLIENT_IDS_EXTENSION[1])
 const android_client2 = new OAuth2Client(CLIENT_ID_ANDROID_PROD)
 
 async function verify(client, token) {
