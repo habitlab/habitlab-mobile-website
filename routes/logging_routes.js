@@ -98,11 +98,16 @@ app.post('/givefeedback', async function(ctx) {
  * @param userid: id of user
  * @param domains_time: {<domain>: <time_spent in seconds>}
  * @param timestamp: start of session in milli since epoch (used to get date)
+ * @param utcOffset: offset of timezone from UTC in minutes.
  */
 app.post('/addsessiontototal', async function(ctx) {
   ctx.type = 'json'
-  const {userid, domains_time, timestamp} = ctx.request.body
-  var date = moment(timestamp).format(DATE_FORMAT)
+  const {userid, domains_time, timestamp, utcOffset} = ctx.request.body
+  var date = moment(timestamp)
+  if (utcOffset) {
+    date.add(utcOffset, "minutes")
+  }
+  date.format(DATE_FORMAT)
   try {
     for (var domain in domains_time) {
       var duration = domains_time[domain]
@@ -209,6 +214,7 @@ app.post('/register_user_with_email', async function(ctx) {
  * @param from: either "browser or "android" (just to determine which client to use)
  * @param timestamp: the timestamp of the client relative to its timezone
  *                    so we can correctly reference the desired dates.
+ * @param utcOffset: offset from UTC time, in minutes.
  * This fetches the stats necessary to display a synced, total visualziation in
  * the app. The return object looks like this:
  * {
@@ -223,7 +229,7 @@ app.post('/account_external_stats', async function(ctx) {
   for (var i = 0; i < SUPPORTED_DEVICES.length; i++) {
     return_obj[SUPPORTED_DEVICES[i]] = {}
   }
-  const {token, from, domain, timestamp} = ctx.request.body
+  const {token, from, domain, timestamp, utcOffset} = ctx.request.body
   if (!valid_from(from)) {
     ctx.body = 'Invalid from key'
     return
@@ -246,7 +252,8 @@ app.post('/account_external_stats', async function(ctx) {
       })
       for (var i = 0; i < device_user_ids.length; i++) {
         userid = device_user_ids[i]
-        return_obj[device][userid] = await get_stats_for_user(userid, domain, timestamp)
+        return_obj[device][userid] = await get_stats_for_user(userid, domain,
+          timestamp, utcOffset)
         // We know add this to total
         for (var k = 0; k < 7; k++) {
           return_obj['total']['days'][k] += return_obj[device][userid]['days'][k]
@@ -270,13 +277,14 @@ app.post('/account_external_stats', async function(ctx) {
  * @param domain: domain of interest (i.e. "www.facebook.com")
  * @param timestamp: the timestamp of the client relative to its timezone
  *                    so we can correctly reference the desired dates.
+ * @param utcOffset: the offset from UTC time, in minutes.
  * Returns:
  * {
  *  days: [time_day, time_yesterday, ..., time_6_days_ago],
  *  weeks: [time_this_week, time_last_week, two_weeks_ago, three_weeks_ago]
  * }
  */
-get_stats_for_user = async function(user_id, domain, timestamp) {
+get_stats_for_user = async function(user_id, domain, timestamp, utcOffset) {
   return_obj = {days: Array(7).fill(0), weeks: Array(4).fill(0)}
   var [collection, db] = await get_collection_for_user_and_logname(user_id, "domain_stats")
   var obj = await n2p(function(cb) {
@@ -288,6 +296,9 @@ get_stats_for_user = async function(user_id, domain, timestamp) {
     obj = {}
   }
   time_cursor = moment(timestamp)
+  if (utcOffset) {
+    time_cursor.add(utcOffset, 'minutes')
+  }
   for (var i = 0; i < 7; i++) {
     var key = time_cursor.format(DATE_FORMAT)
     if (obj[key] != null) {
@@ -296,6 +307,9 @@ get_stats_for_user = async function(user_id, domain, timestamp) {
     time_cursor.subtract(1, 'days')
   }
   time_cursor = moment(timestamp)
+  if (utcOffset) {
+    time_cursor.add(utcOffset, 'minutes')
+  }
   for (var j = 0; j < 4; j++) {
     return_obj.weeks[j] += (sum_time_of_period(time_cursor, 7, obj))
     time_cursor.subtract(1, 'weeks')
