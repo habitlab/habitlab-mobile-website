@@ -24,24 +24,22 @@ var crypto = require('crypto')
 var get_secret = require('getsecret')
 
 const CLIENT_ID_ANDROID = get_secret('CLIENT_ID_ANDROID')
-const CLIENT_ID_EXTENSION = get_secret('CLIENT_ID_EXTENSION')
+const CLIENT_IDS_EXTENSION = JSON.parse(get_secret('CLIENT_ID_EXTENSION'))
 const CLIENT_ID_ANDROID_PROD = get_secret('CLIENT_ID_ANDROID_PRODUCTION')
 
 const {OAuth2Client} = require('google-auth-library')
 const android_client = new OAuth2Client(CLIENT_ID_ANDROID)
-const extension_client = new OAuth2Client(CLIENT_ID_EXTENSION)
+const extension_client = new OAuth2Client(CLIENT_IDS_EXTENSION[0])
 const android_client2 = new OAuth2Client(CLIENT_ID_ANDROID_PROD)
 
 async function verify(client, token) {
   const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: [CLIENT_ID_ANDROID, CLIENT_ID_EXTENSION, CLIENT_ID_ANDROID_PROD],  // Specify the CLIENT_ID of the app that accesses the backend
+      audience: [CLIENT_ID_ANDROID, CLIENT_ID_ANDROID_PROD].concat(CLIENT_IDS_EXTENSION),  // Specify the CLIENT_ID of the app that accesses the backend
       // Or, if multiple clients access the backend:
       //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
   })
   const payload = ticket.getPayload()
-  console.log(JSON.stringify(ticket))
-  console.log(JSON.stringify(payload))
   return payload['email']
   // If request specified a G Suite domain:
   //const domain = payload['hd']
@@ -92,6 +90,7 @@ app.post('/givefeedback', async function(ctx) {
   await n2p(function(cb) {
     collection.insert(fix_object(ctx.request.body), cb)
   })
+  ctx.body = 'success'
 })
 
 /**
