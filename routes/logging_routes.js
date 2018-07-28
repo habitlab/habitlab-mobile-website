@@ -106,6 +106,7 @@ app.post('/addsessiontototal', async function(ctx) {
   var date = moment(timestamp)
   if (utcOffset) {
     date.add(utcOffset, "minutes")
+    console.log("GOT UTCOFFSET: " + utcOffset)
   }
   date.format(DATE_FORMAT)
   try {
@@ -230,6 +231,9 @@ app.post('/account_external_stats', async function(ctx) {
     return_obj[SUPPORTED_DEVICES[i]] = {}
   }
   const {token, from, domain, timestamp, utcOffset} = ctx.request.body
+  if (utcOffset) {
+    console.log("GOT UTC OFFSET!!" + utcOffset)
+  }
   if (!valid_from(from)) {
     ctx.body = 'Invalid from key'
     return
