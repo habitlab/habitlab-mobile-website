@@ -164,6 +164,7 @@ app.post('/register_user_with_email', async function(ctx) {
   }
   try {
     email = await verify(client, token)
+    console.log(email)
     // To anonymize, let's hash it with SHA-256
     email = crypto.createHash('sha256').update(email).digest('hex');
     // The id token was valid! We have a user
