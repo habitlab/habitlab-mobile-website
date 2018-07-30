@@ -226,7 +226,7 @@ app.post('/register_user_with_email', async function(ctx) {
  */
 app.post('/account_external_stats', async function(ctx) {
   // Get time spent in day, week, and month.
-  var return_obj = {}
+  let return_obj = {}
   return_obj['total'] = {days: Array(7).fill(0), weeks: Array(4).fill(0)}
   for (var i = 0; i < SUPPORTED_DEVICES.length; i++) {
     return_obj[SUPPORTED_DEVICES[i]] = {}
@@ -244,18 +244,18 @@ app.post('/account_external_stats', async function(ctx) {
     client = extension_client
   }
   try {
-    var email = await verify(client, token)
-    var user_ids = await get_user_ids_from_email(email)
-    for (var j = 0; j < SUPPORTED_DEVICES.length; j++) {
-      device = SUPPORTED_DEVICES[j]
-      device_user_ids = user_ids[device]
+    const email = await verify(client, token)
+    const user_ids = await get_user_ids_from_email(email)
+    for (let j = 0; j < SUPPORTED_DEVICES.length; j++) {
+      const device = SUPPORTED_DEVICES[j]
+      let device_user_ids = user_ids[device]
       device_user_ids = device_user_ids.map(function(obj) {
         if (obj.id != null){
           return obj.id
         }
         return obj
       })
-      for (var i = 0; i < device_user_ids.length; i++) {
+      for (let i = 0; i < device_user_ids.length; i++) {
         const userid = device_user_ids[i]
         console.log("setting param w/ userid: " + userid + " domain: " + domain + " device: " + device)
         return_obj[device][userid] = await get_stats_for_user(userid, domain,
@@ -263,7 +263,7 @@ app.post('/account_external_stats', async function(ctx) {
         // We now add this to total
         console.log(JSON.stringify(return_obj))
         console.log("moving on with userid: " + userid + "  device: " + device)
-        for (var k = 0; k < 7; k++) {
+        for (let k = 0; k < 7; k++) {
           return_obj['total']['days'][k] += return_obj[device][userid]['days'][k]
           if (k < 4) {
             return_obj['total']['weeks'][k] += return_obj[device][userid]['weeks'][k]
