@@ -257,13 +257,12 @@ app.post('/account_external_stats', async function(ctx) {
       })
       for (var i = 0; i < device_user_ids.length; i++) {
         userid = device_user_ids[i]
-        console.log("setting param w/ userid: " + userid + "  device: " + device)
+        console.log("setting param w/ userid: " + userid + " domain: " + domain + " device: " + device)
         return_obj[device][userid] = await get_stats_for_user(userid, domain,
           timestamp, utcOffset)
         // We now add this to total
-        console.log(return_obj)
         console.log(JSON.stringify(return_obj))
-        console.log("userid: " + userid + "  device: " + device)
+        console.log("moving on with userid: " + userid + "  device: " + device)
         for (var k = 0; k < 7; k++) {
           return_obj['total']['days'][k] += return_obj[device][userid]['days'][k]
           if (k < 4) {
