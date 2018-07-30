@@ -293,7 +293,7 @@ app.post('/account_external_stats', async function(ctx) {
  * }
  */
 get_stats_for_user = async function(user_id, domain, timestamp, utcOffset) {
-  return_obj = {days: Array(7).fill(0), weeks: Array(4).fill(0)}
+  return_obj = {"days": Array(7).fill(0), "weeks": Array(4).fill(0)}
   var [collection, db] = await get_collection_for_user_and_logname(user_id, "domain_stats")
   var obj = await n2p(function(cb) {
     collection.find({domain: domain}).toArray(cb)
@@ -310,7 +310,7 @@ get_stats_for_user = async function(user_id, domain, timestamp, utcOffset) {
   for (var i = 0; i < 7; i++) {
     var key = time_cursor.format(DATE_FORMAT)
     if (obj[key] != null) {
-      return_obj.days[i] += (obj[key])
+      return_obj["days"][i] += (obj[key])
     }
     time_cursor.subtract(1, 'days')
   }
@@ -319,7 +319,7 @@ get_stats_for_user = async function(user_id, domain, timestamp, utcOffset) {
     time_cursor.add(utcOffset, 'minutes')
   }
   for (var j = 0; j < 4; j++) {
-    return_obj.weeks[j] += (sum_time_of_period(time_cursor, 7, obj))
+    return_obj.["weeks"][j] += (sum_time_of_period(time_cursor, 7, obj))
     time_cursor.subtract(1, 'weeks')
   }
   console.log('return obj in get_stats_for_user: ' + JSON.stringify(return_obj))
