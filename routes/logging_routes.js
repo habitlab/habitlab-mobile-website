@@ -264,7 +264,13 @@ app.post('/account_external_stats', async function(ctx) {
         console.log(JSON.stringify(return_obj))
         console.log("moving on with userid: " + userid + "  device: " + device)
         for (let k = 0; k < 7; k++) {
-          return_obj['total']['days'][k] += return_obj[device][userid]['days'][k]
+          console.log()
+          try {
+              return_obj['total']['days'][k] += return_obj[device][userid]['days'][k]
+          } catch(e) {
+            console.log(" UNDEFINED ERROR " + userid +  " " + device)
+          }
+
           if (k < 4) {
             return_obj['total']['weeks'][k] += return_obj[device][userid]['weeks'][k]
           }
