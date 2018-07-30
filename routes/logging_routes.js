@@ -256,7 +256,7 @@ app.post('/account_external_stats', async function(ctx) {
         return obj
       })
       for (var i = 0; i < device_user_ids.length; i++) {
-        userid = device_user_ids[i]
+        const userid = device_user_ids[i]
         console.log("setting param w/ userid: " + userid + " domain: " + domain + " device: " + device)
         return_obj[device][userid] = await get_stats_for_user(userid, domain,
           timestamp, utcOffset)
