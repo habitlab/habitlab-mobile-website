@@ -108,7 +108,7 @@ app.post('/addsessiontototal', async function(ctx) {
     date.add(utcOffset, "minutes")
     console.log("GOT UTCOFFSET: " + utcOffset)
   }
-  date.format(DATE_FORMAT)
+  date = date.format(DATE_FORMAT)
   try {
     for (var domain in domains_time) {
       var duration = domains_time[domain]
