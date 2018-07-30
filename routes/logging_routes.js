@@ -260,7 +260,7 @@ app.post('/account_external_stats', async function(ctx) {
         console.log("setting param w/ userid: " + userid + "  device: " + device)
         return_obj[device][userid] = await get_stats_for_user(userid, domain,
           timestamp, utcOffset)
-        // We know add this to total
+        // We now add this to total
         console.log(return_obj)
         console.log(JSON.stringify(return_obj))
         console.log("userid: " + userid + "  device: " + device)
@@ -323,7 +323,7 @@ get_stats_for_user = async function(user_id, domain, timestamp, utcOffset) {
     return_obj["weeks"][j] += (sum_time_of_period(time_cursor, 7, obj))
     time_cursor.subtract(1, 'weeks')
   }
-  console.log('return obj in get_stats_for_user: ' + JSON.stringify(return_obj))
+  console.log('return obj in get_stats_for_user: ' + user_id + " " + JSON.stringify(return_obj))
   return return_obj
 }
 
