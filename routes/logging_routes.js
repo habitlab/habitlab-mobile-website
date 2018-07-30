@@ -319,7 +319,7 @@ get_stats_for_user = async function(user_id, domain, timestamp, utcOffset) {
     time_cursor.add(utcOffset, 'minutes')
   }
   for (var j = 0; j < 4; j++) {
-    return_obj.["weeks"][j] += (sum_time_of_period(time_cursor, 7, obj))
+    return_obj["weeks"][j] += (sum_time_of_period(time_cursor, 7, obj))
     time_cursor.subtract(1, 'weeks')
   }
   console.log('return obj in get_stats_for_user: ' + JSON.stringify(return_obj))
