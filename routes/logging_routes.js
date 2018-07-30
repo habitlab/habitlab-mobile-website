@@ -263,6 +263,11 @@ app.post('/account_external_stats', async function(ctx) {
         // We now add this to total
         console.log(JSON.stringify(return_obj))
         console.log("moving on with userid: " + userid + "  device: " + device)
+        while (return_obj[device][userid] == null)
+        {
+          // In case for some reason this function skips await,
+          // this function will hang until we do.
+        }
         for (var k = 0; k < 7; k++) {
           return_obj['total']['days'][k] += return_obj[device][userid]['days'][k]
           if (k < 4) {
