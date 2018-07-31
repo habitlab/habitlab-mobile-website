@@ -108,7 +108,6 @@ app.post('/addsessiontototal', async function(ctx) {
   var date = moment(timestamp)
   if (utcOffset) {
     date.add(utcOffset, "minutes")
-    console.log("GOT UTCOFFSET: " + utcOffset)
   }
   date = date.format(DATE_FORMAT)
   try {
@@ -166,7 +165,6 @@ app.post('/register_user_with_email', async function(ctx) {
   }
   try {
     email = await verify(client, token)
-    console.log(email)
     // To anonymize, let's hash it with SHA-256
     email = crypto.createHash('sha256').update(email).digest('hex');
     // The id token was valid! We have a user
@@ -293,6 +291,7 @@ get_stats_for_user = async function(user_id, domain_name, timestamp, utcOffset, 
   return_obj = {"days": Array(7).fill(0), "weeks": Array(4).fill(0)}
   var [collection, db] = await get_collection_for_user_and_logname(user_id, "domain_stats")
   // Get list of possible domain values
+
   const compatible_domains = await get_compatible_domains(collection, domain_name,
      device)
   var obj = await n2p(function(cb) {
@@ -423,15 +422,12 @@ get_compatible_domains = async function(collection, domain_name, device) {
  *              or package)
  */
 get_domain_name = function(domain, from) {
-
   // First, split up domain by periods.
   domain = domain.toLowerCase()
   let names = domain.split(".")
-  if (domain == "com.google.android.youtube") {
-  }
   if (from == ANDROID) {
     // A lot of native app packages have "android.google". Let's cut those out
-    names.filter(function(obj) {
+    names = names.filter(function(obj) {
       return obj != "google" && obj != "android"
     })
   }
@@ -445,7 +441,7 @@ get_domain_name = function(domain, from) {
     return names[1]
   } else {
     // It's a normal domain. Return second to last element (before "com", etc.)
-    return names[names.length - 1]
+    return names[names.length - 2]
   }
 }
 
