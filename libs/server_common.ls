@@ -58,7 +58,19 @@ export get_mongo_db = ->>
   getdb_running := true
   connection_options = {
     w: 0
+    j: false
+    socketOptions: {
+      keepAlive: 1,
+      connectTimeoutMS: 30000
+    }
+    server: { 
+      # sets how many times to try reconnecting
+      reconnectTries: Number.MAX_VALUE,
+      # sets the delay between every retry (milliseconds)
+      reconnectInterval: 1000 
+    }
   }
+  /*
   if process.env.PORT? # on heroku
     connection_options.readPreference = mongodb.ReadPreference.PRIMARY_PREFERRED
   else # local machine
@@ -66,6 +78,7 @@ export get_mongo_db = ->>
     connection_options.readConcern = {
       level: 'available'
     }
+  */
   try
     local_cache_db := await n2p -> mongodb.MongoClient.connect(
       mongourl,
@@ -94,8 +107,18 @@ export get_mongo_db2 = ->>
   connection_options = {
     w: 0
     j: false
-    #readConcern: ''
+    socketOptions: {
+      keepAlive: 1,
+      connectTimeoutMS: 30000
+    }
+    server: { 
+      # sets how many times to try reconnecting
+      reconnectTries: Number.MAX_VALUE,
+      # sets the delay between every retry (milliseconds)
+      reconnectInterval: 1000 
+    }
   }
+  /*
   if process.env.PORT? # on heroku
     connection_options.readPreference = mongodb.ReadPreference.PRIMARY_PREFERRED
   else # local machine
@@ -103,6 +126,7 @@ export get_mongo_db2 = ->>
     connection_options.readConcern = {
       level: 'available'
     }
+  */
   try
     local_cache_db2 := await n2p -> mongodb.MongoClient.connect(
       mongourl2,
