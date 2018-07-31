@@ -139,13 +139,49 @@ export get_mongo_db2 = ->>
     console.error err
     return
 
+export does_collection_exist = (collection_name) ->>
+  db = await get_mongo_db()
+  collections = db.collection('collections')
+  item = await n2p -> collections.findOne({_id: collection_name}, it)
+  return item?
+
+collections_already_logged = {}
+
+export remove_collection_exists = (collection_name) ->>
+  delete collections_already_logged[collection_name]
+  db = await get_mongo_db()
+  collections = db.collection('collections')
+  await n2p -> collections.remove({_id: collection_name}, it)
+  return
+
+export log_collection_exists = (collection_name) ->>
+  if collections_already_logged[collection_name]?
+    return
+  collections_already_logged[collection_name] = true
+  db = await get_mongo_db()
+  collections = db.collection('collections')
+  underscore_index = collection_name.indexOf('_')
+  if underscore_index == -1
+    data = {_id: collection_name}
+  else
+    userid = collection_name.slice(0, underscore_index)
+    collection = collection_name.slice(underscore_index + 1)
+    data = {
+      _id: collection_name,
+      userid: userid,
+      collection: collection
+    }
+  item = await n2p -> collections.findOne({_id: collection_name}, it)
+  if item == null
+    await n2p -> collections.insert(data, it)
+  return
+
 export get_collection = (collection_name) ->>
   db = await get_mongo_db()
   fakedb = {
     close: ->
   }
   collection = db.collection(collection_name)
-  /*
   proxy_func = (obj, methodname) ->
     orig_method = obj[methodname]
     new_method = ->
@@ -161,7 +197,6 @@ export get_collection = (collection_name) ->>
   proxy_func(collection, 'save')
   #proxy_func(collection, 'findAndModify')
   #proxy_func(collection, 'findAndUpdate')
-  */
   return [collection, fakedb]
 
 export get_collection2 = (collection_name) ->>
