@@ -31,6 +31,8 @@ const {OAuth2Client} = require('google-auth-library')
 const android_client = new OAuth2Client(CLIENT_ID_ANDROID)
 const extension_client = new OAuth2Client(CLIENT_IDS_EXTENSION[1])
 const android_client2 = new OAuth2Client(CLIENT_ID_ANDROID_PROD)
+const ANDROID = "android"
+const BROWSER = "browser"
 
 async function verify(client, token) {
   const ticket = await client.verifyIdToken({
@@ -232,9 +234,7 @@ app.post('/account_external_stats', async function(ctx) {
     return_obj[SUPPORTED_DEVICES[i]] = {}
   }
   const {token, from, domain, timestamp, utcOffset} = ctx.request.body
-  if (utcOffset) {
-    console.log("GOT UTC OFFSET!!" + utcOffset)
-  }
+  let domain_name = get_domain_name(domain, from)
   if (!valid_from(from)) {
     ctx.body = 'Invalid from key'
     return
@@ -257,20 +257,11 @@ app.post('/account_external_stats', async function(ctx) {
       })
       for (let i = 0; i < device_user_ids.length; i++) {
         const userid = device_user_ids[i]
-        console.log("setting param w/ userid: " + userid + " domain: " + domain + " device: " + device)
-        return_obj[device][userid] = await get_stats_for_user(userid, domain,
-          timestamp, utcOffset)
+        return_obj[device][userid] = await get_stats_for_user(userid, domain_name,
+          timestamp, utcOffset, device)
         // We now add this to total
-        console.log(JSON.stringify(return_obj))
-        console.log("moving on with userid: " + userid + "  device: " + device)
         for (let k = 0; k < 7; k++) {
-          console.log()
-          try {
-              return_obj['total']['days'][k] += return_obj[device][userid]['days'][k]
-          } catch(e) {
-            console.log(" UNDEFINED ERROR " + userid +  " " + device)
-          }
-
+          return_obj['total']['days'][k] += return_obj[device][userid]['days'][k]
           if (k < 4) {
             return_obj['total']['weeks'][k] += return_obj[device][userid]['weeks'][k]
           }
@@ -288,7 +279,7 @@ app.post('/account_external_stats', async function(ctx) {
 /**
  * Gets stats in format according to 'account_external_stats'
  * @param user_id: string user id
- * @param domain: domain of interest (i.e. "www.facebook.com")
+ * @param domain_name: domain name of interest (i.e. "facebook")
  * @param timestamp: the timestamp of the client relative to its timezone
  *                    so we can correctly reference the desired dates.
  * @param utcOffset: the offset from UTC time, in minutes.
@@ -298,11 +289,14 @@ app.post('/account_external_stats', async function(ctx) {
  *  weeks: [time_this_week, time_last_week, two_weeks_ago, three_weeks_ago]
  * }
  */
-get_stats_for_user = async function(user_id, domain, timestamp, utcOffset) {
+get_stats_for_user = async function(user_id, domain_name, timestamp, utcOffset, device) {
   return_obj = {"days": Array(7).fill(0), "weeks": Array(4).fill(0)}
   var [collection, db] = await get_collection_for_user_and_logname(user_id, "domain_stats")
+  // Get list of possible domain values
+  const compatible_domains = await get_compatible_domains(collection, domain_name,
+     device)
   var obj = await n2p(function(cb) {
-    collection.find({domain: domain}).toArray(cb)
+    collection.find({"domain": {$in: compatible_domains}}).toArray(cb)
   })
   if (obj != null && obj.length > 0) {
     obj = obj[0]
@@ -328,7 +322,6 @@ get_stats_for_user = async function(user_id, domain, timestamp, utcOffset) {
     return_obj["weeks"][j] += (sum_time_of_period(time_cursor, 7, obj))
     time_cursor.subtract(1, 'weeks')
   }
-  console.log('return obj in get_stats_for_user: ' + user_id + " " + JSON.stringify(return_obj))
   return return_obj
 }
 
@@ -408,6 +401,52 @@ get_user_ids_from_email = async function(email) {
       returnObj = obj[email]
     }
     return returnObj
+}
+
+/**
+ * Generates a list of package names/domains that are associated with the domain
+ * @param collection: mongoDB collection to query from.
+ * @param domain: domain for us to find associated domains
+ * @param device: either "android" or "browser"
+ */
+get_compatible_domains = async function(collection, domain_name, device) {
+  let possible_domains = await collection.distinct("domain")
+  return possible_domains.filter(function(domain) {
+    return get_domain_name(domain, device) == domain_name
+  })
+}
+
+/**
+ * Generates the "important" field in the domain (i.e. www.facebook.com -> "facebook")
+ * @param domain: domain (i.e. www.facebook.com or com.facebook.kortana)
+ * @param from: either "android" or "browser" (so we know whether it is web domain
+ *              or package)
+ */
+get_domain_name = function(domain, from) {
+
+  // First, split up domain by periods.
+  domain = domain.toLowerCase()
+  let names = domain.split(".")
+  if (domain == "com.google.android.youtube") {
+  }
+  if (from == ANDROID) {
+    // A lot of native app packages have "android.google". Let's cut those out
+    names.filter(function(obj) {
+      return obj != "google" && obj != "android"
+    })
+  }
+  if (names.length < 2) {
+    // This is not a normal domain. Just return it as is.
+    return domain
+  }
+  if (from == ANDROID) {
+    // It's a package (reversed). Return second element (after "com","org",etc)
+
+    return names[1]
+  } else {
+    // It's a normal domain. Return second to last element (before "com", etc.)
+    return names[names.length - 1]
+  }
 }
 
 require('libs/globals').add_globals(module.exports)
