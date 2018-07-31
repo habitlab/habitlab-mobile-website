@@ -69,8 +69,6 @@ app.post('/helloworld', async function(ctx) {
 app.post('/addtolog', async function(ctx) {
   ctx.type = 'json'
   let data = ctx.request.body
-  console.log(data)
-  console.log(ctx.request.query)
   const {userid, logname} = ctx.request.query
   try {
     var [collection,db] = await get_collection_for_user_and_logname(userid, logname)
