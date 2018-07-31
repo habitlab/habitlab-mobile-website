@@ -106,8 +106,6 @@ app.post('/givefeedback', async function(ctx) {
  */
 app.post('/addsessiontototal', async function(ctx) {
   ctx.type = 'json'
-  ctx.body = {success: 'true'}
-  return
   const {userid, domains_time, timestamp, utcOffset} = ctx.request.body
   var date = moment(timestamp)
   if (utcOffset) {

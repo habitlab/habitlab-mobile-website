@@ -170,7 +170,6 @@ export get_collection = (collection_name) ->>
     close: ->
   }
   collection = db.collection(collection_name)
-  /*
   proxy_func = (obj, methodname) ->
     orig_method = obj[methodname]
     new_method = ->
@@ -186,7 +185,6 @@ export get_collection = (collection_name) ->>
   proxy_func(collection, 'save')
   #proxy_func(collection, 'findAndModify')
   #proxy_func(collection, 'findAndUpdate')
-  */
   return [collection, fakedb]
 
 export get_signups = ->>
