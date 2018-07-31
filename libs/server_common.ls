@@ -141,11 +141,53 @@ export get_mongo_db2 = ->>
 
 export get_collection = (collection_name) ->>
   db = await get_mongo_db()
-  return [db.collection(collection_name), db]
+  fakedb = {
+    close: ->
+  }
+  collection = db.collection(collection_name)
+  /*
+  proxy_func = (obj, methodname) ->
+    orig_method = obj[methodname]
+    new_method = ->
+      log_collection_exists(collection_name)
+      return orig_method.apply(obj, arguments)
+    obj[methodname] = new_method.bind(obj)
+  proxy_func(collection, 'insert')
+  proxy_func(collection, 'insertMany')
+  proxy_func(collection, 'insertOne')
+  proxy_func(collection, 'update')
+  proxy_func(collection, 'updateMany')
+  proxy_func(collection, 'updateOne')
+  proxy_func(collection, 'save')
+  #proxy_func(collection, 'findAndModify')
+  #proxy_func(collection, 'findAndUpdate')
+  */
+  return [collection, fakedb]
 
-export get_collection2 = (collection_name) ->>
+export get_collection = (collection_name) ->>
   db = await get_mongo_db2()
-  return [db.collection(collection_name), db]
+  fakedb = {
+    close: ->
+  }
+  collection = db.collection(collection_name)
+  /*
+  proxy_func = (obj, methodname) ->
+    orig_method = obj[methodname]
+    new_method = ->
+      log_collection_exists(collection_name)
+      return orig_method.apply(obj, arguments)
+    obj[methodname] = new_method.bind(obj)
+  proxy_func(collection, 'insert')
+  proxy_func(collection, 'insertMany')
+  proxy_func(collection, 'insertOne')
+  proxy_func(collection, 'update')
+  proxy_func(collection, 'updateMany')
+  proxy_func(collection, 'updateOne')
+  proxy_func(collection, 'save')
+  #proxy_func(collection, 'findAndModify')
+  #proxy_func(collection, 'findAndUpdate')
+  */
+  return [collection, fakedb]
 
 export get_signups = ->>
   return await get_collection('signups')
