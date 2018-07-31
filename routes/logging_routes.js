@@ -211,7 +211,7 @@ app.post('/register_user_with_email', async function(ctx) {
 
 /**
  * Gives total time spent across devices for a given doamin and Google Account
- * As query params:
+ * As JSON body fields:
  * @param domain: name of domain you want stats  of (i.e. "www.facebook.com")
  * @param token: token id of Google Account
  * @param from: either "browser or "android" (just to determine which client to use)
@@ -296,10 +296,11 @@ get_stats_for_user = async function(user_id, domain_name, timestamp, utcOffset, 
   const compatible_domains = await get_compatible_domains(collection, domain_name,
      device)
   var obj = await n2p(function(cb) {
-    collection.find({"domain": {$in: compatible_domains}}).toArray(cb)
+    collection.find({"_id": {$in: compatible_domains}}).toArray(cb)
   })
   if (obj != null && obj.length > 0) {
     obj = obj[0]
+    console.log("OBJECT FOUND: " + JSON.stringify(obj))
   } else {
     obj = {}
   }
@@ -410,7 +411,7 @@ get_user_ids_from_email = async function(email) {
  * @param device: either "android" or "browser"
  */
 get_compatible_domains = async function(collection, domain_name, device) {
-  let possible_domains = await collection.distinct("domain")
+  let possible_domains = await collection.distinct("_id")
   return possible_domains.filter(function(domain) {
     return get_domain_name(domain, device) == domain_name
   })
@@ -423,6 +424,7 @@ get_compatible_domains = async function(collection, domain_name, device) {
  *              or package)
  */
 get_domain_name = function(domain, from) {
+  if (typeof domain != "string") return ""
   // First, split up domain by periods.
   domain = domain.toLowerCase()
   let names = domain.split(".")
