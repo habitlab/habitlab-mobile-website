@@ -57,18 +57,15 @@ export get_mongo_db = ->>
     return local_cache_db
   getdb_running := true
   connection_options = {
-    w: 0
-    j: false
-    socketOptions: {
-      keepAlive: 1,
-      connectTimeoutMS: 30000
-    }
-    server: { 
-      # sets how many times to try reconnecting
-      reconnectTries: Number.MAX_VALUE,
-      # sets the delay between every retry (milliseconds)
-      reconnectInterval: 1000 
-    }
+    w: 0,
+    j: false,
+    # the server/replset/mongos options are deprecated, all their options are supported at the top level of the options object [poolSize,ssl,sslValidate,sslCA,sslCert,ciphers,ecdhCurve,sslKey,sslPass,sslCRL,autoReconnect,noDelay,keepAlive,connectTimeoutMS,family,socketTimeoutMS,reconnectTries,reconnectInterval,ha,haInterval,replicaSet,secondaryAcceptableLatencyMS,acceptableLatencyMS,connectWithNoPrimary,authSource,w,wtimeout,j,forceServerObjectId,serializeFunctions,ignoreUndefined,raw,bufferMaxEntries,readPreference,pkFactory,promiseLibrary,readConcern,maxStalenessSeconds,loggerLevel,logger,promoteValues,promoteBuffers,promoteLongs,domainsEnabled,keepAliveInitialDelay,checkServerIdentity,validateOptions,appname,auth]
+    # sets how many times to try reconnecting
+    reconnectTries: Number.MAX_VALUE,
+    # sets the delay between every retry (milliseconds)
+    reconnectInterval: 1000,
+    keepAlive: 1,
+    connectTimeoutMS: 30000,
   }
   /*
   if process.env.PORT? # on heroku
@@ -105,18 +102,15 @@ export get_mongo_db2 = ->>
     return local_cache_db2
   getdb_running2 := true
   connection_options = {
-    w: 0
-    j: false
-    socketOptions: {
-      keepAlive: 1,
-      connectTimeoutMS: 30000
-    }
-    server: { 
-      # sets how many times to try reconnecting
-      reconnectTries: Number.MAX_VALUE,
-      # sets the delay between every retry (milliseconds)
-      reconnectInterval: 1000 
-    }
+    w: 0,
+    j: false,
+    # the server/replset/mongos options are deprecated, all their options are supported at the top level of the options object [poolSize,ssl,sslValidate,sslCA,sslCert,ciphers,ecdhCurve,sslKey,sslPass,sslCRL,autoReconnect,noDelay,keepAlive,connectTimeoutMS,family,socketTimeoutMS,reconnectTries,reconnectInterval,ha,haInterval,replicaSet,secondaryAcceptableLatencyMS,acceptableLatencyMS,connectWithNoPrimary,authSource,w,wtimeout,j,forceServerObjectId,serializeFunctions,ignoreUndefined,raw,bufferMaxEntries,readPreference,pkFactory,promiseLibrary,readConcern,maxStalenessSeconds,loggerLevel,logger,promoteValues,promoteBuffers,promoteLongs,domainsEnabled,keepAliveInitialDelay,checkServerIdentity,validateOptions,appname,auth]
+    # sets how many times to try reconnecting
+    reconnectTries: Number.MAX_VALUE,
+    # sets the delay between every retry (milliseconds)
+    reconnectInterval: 1000,
+    keepAlive: 1,
+    connectTimeoutMS: 30000,
   }
   /*
   if process.env.PORT? # on heroku
