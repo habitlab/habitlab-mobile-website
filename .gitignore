@@ -3,3 +3,4 @@ desktop.ini
 .DS_Store
 .getsecret.yaml
 /mongodata
+/package-lock.json

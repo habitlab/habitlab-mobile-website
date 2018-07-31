@@ -111,10 +111,11 @@ app.post('/addsessiontototal', async function(ctx) {
   }
   date = date.format(DATE_FORMAT)
   try {
+    const [collection, db] = await get_collection_for_user_and_logname(userid, "domain_stats")
     for (var domain in domains_time) {
       var duration = domains_time[domain]
-      var [collection, db] = await get_collection_for_user_and_logname(userid,
-        "domain_stats")
+      //var [collection, db] = await get_collection_for_user_and_logname(userid,
+      //"domain_stats")
       var obj = await n2p(function(cb) {
         collection.find({"_id": domain}).toArray(cb)
       })
