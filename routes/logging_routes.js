@@ -116,14 +116,14 @@ app.post('/addsessiontototal', async function(ctx) {
       var [collection, db] = await get_collection_for_user_and_logname(userid,
         "domain_stats")
       var obj = await n2p(function(cb) {
-        collection.find({domain: domain}).toArray(cb)
+        collection.find({"_id": domain}).toArray(cb)
       })
       var objFound = false
       if (obj != null && obj.length > 0)  {
         obj = obj[0]
         objFound = true
       } else {
-        obj = {domain: domain}
+        obj = {"_id": domain}
       }
 
       if (obj[date] == null) {
@@ -131,7 +131,7 @@ app.post('/addsessiontototal', async function(ctx) {
       }
       obj[date] += Number(duration)
       if (objFound) {
-        collection.updateOne({domain: domain}, {$set: obj}, function(err, res) {
+        collection.updateOne({"_id": domain}, {$set: obj}, function(err, res) {
           if (err)  {
             throw err
           }
