@@ -300,7 +300,6 @@ get_stats_for_user = async function(user_id, domain_name, timestamp, utcOffset, 
   })
   if (obj != null && obj.length > 0) {
     obj = obj[0]
-    console.log("OBJECT FOUND: " + JSON.stringify(obj))
   } else {
     obj = {}
   }
@@ -447,5 +446,48 @@ get_domain_name = function(domain, from) {
     return names[names.length - 2]
   }
 }
+
+/**
+ * This function tranforms our previous domain_stats objects. Before, there was
+ * a "domain" field, which requried queries that take O(n) time.
+ * Now, domain  will be the primary key in the _id field, which has O(1) lookup
+ * time.
+ */
+ let transition_objects = async function() {
+   // Get user user_ids
+   const [email_to_user_col, db] = await get_collection("email_to_user")
+   const email_to_user_arr = await n2p(function(cb){
+     email_to_user_col.find({}).toArray(cb)
+   })
+   const email_to_user = email_to_user_arr[0]
+   let triedOnce = false
+   for (let email in email_to_user) {
+     if (email == "_id") continue
+     const device_types = ['android', 'browser']
+     for (let device of device_types) {
+       for (let id of email_to_user[email][device]) {
+         if (!triedOnce) {
+            //Get domain STATS
+            const [domain_stats_col, db2] =
+              await get_collection_for_user_and_logname(id, "domain_stats")
+            // The scary part. We cannot update _id, so we have to
+            // delete the object and recreate it.
+            let results = await n2p(function(cb) {
+              domain_stats_col.find({domain: {$exists: true}}).toArray(cb)
+            })
+            for (let x of results) {
+              x._id = x.domain
+              await n2p(function(cb) {
+                domain_stats_col.remove({domain: x.domain}, cb)
+              })
+              await n2p(function(cb) {
+                domain_stats_col.insert(x, cb)
+              })
+            }
+         }
+       }
+     }
+   }
+ }
 
 require('libs/globals').add_globals(module.exports)
