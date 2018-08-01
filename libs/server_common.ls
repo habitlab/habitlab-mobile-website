@@ -39,23 +39,20 @@ export mongourl = getsecret('MONGODB_URI') ? 'mongodb://localhost:27017/default'
 
 export mongourl2 = getsecret('MONGODB_URI') ? 'mongodb://localhost:27017/default'
 
+memoizeSingleAsync = (func) ->
+  cached_promise = null
+  return ->
+    if cached_promise?
+      return cached_promise
+    result = func()
+    cached_promise := result
+    return result
+
 sleep = (time) ->>
   return new Promise ->
     setTimeout(it, time)
 
-local_cache_db = null
-getdb_running = false
-
-export get_mongo_db = ->>
-  if local_cache_db?
-    return local_cache_db
-  if getdb_running
-    while getdb_running
-      await sleep(1)
-    while getdb_running or local_cache_db == null
-      await sleep(1)
-    return local_cache_db
-  getdb_running := true
+export get_mongo_db = memoizeSingleAsync ->>
   connection_options = {
     w: 0,
     j: false,
@@ -77,30 +74,17 @@ export get_mongo_db = ->>
     }
   */
   try
-    local_cache_db := await n2p -> mongodb.MongoClient.connect(
+    return await n2p -> mongodb.MongoClient.connect(
       mongourl,
       connection_options,
       it
     )
-    return local_cache_db
   catch err
     console.error 'error getting mongodb'
     console.error err
     return
 
-local_cache_db2 = null
-getdb_running2 = false
-
-export get_mongo_db2 = ->>
-  if local_cache_db2?
-    return local_cache_db2
-  if getdb_running2
-    while getdb_running2
-      await sleep(1)
-    while getdb_running2 or local_cache_db2 == null
-      await sleep(1)
-    return local_cache_db2
-  getdb_running2 := true
+export get_mongo_db2 = memoizeSingleAsync ->>
   connection_options = {
     w: 0,
     j: false,
@@ -122,12 +106,11 @@ export get_mongo_db2 = ->>
     }
   */
   try
-    local_cache_db2 := await n2p -> mongodb.MongoClient.connect(
+    return await n2p -> mongodb.MongoClient.connect(
       mongourl2,
       connection_options,
       it
     )
-    return local_cache_db2
   catch err
     console.error 'error getting mongodb2'
     console.error err
