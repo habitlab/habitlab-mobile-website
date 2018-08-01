@@ -201,7 +201,9 @@ app.post('/register_user_with_email', async function(ctx) {
         collection.insert(fix_object(obj),cb)
       })
     }
-    ctx.body = {message: 'Sucesss! Registered user ' + userid + ' with ' + email}
+    const secret = await generate_secret(email)
+    ctx.body = {message: 'Sucesss! Registered user ' + userid + ' with ' + email,
+                secret: secret}
   } catch(e) {
     console.log(e)
     ctx.body = {message: 'Error. Perhaps your token is outdated?'}
@@ -214,6 +216,7 @@ app.post('/register_user_with_email', async function(ctx) {
  * As JSON body fields:
  * @param domain: name of domain you want stats  of (i.e. "www.facebook.com")
  * @param token: token id of Google Account
+ * @param secret: instead of token, you can use a secret key.
  * @param from: either "browser or "android" (just to determine which client to use)
  * @param timestamp: the timestamp of the client relative to its timezone
  *                    so we can correctly reference the desired dates.
@@ -232,7 +235,7 @@ app.post('/account_external_stats', async function(ctx) {
   for (var i = 0; i < SUPPORTED_DEVICES.length; i++) {
     return_obj[SUPPORTED_DEVICES[i]] = {}
   }
-  const {token, from, domain, timestamp, utcOffset} = ctx.request.body
+  const {token, secret, from, domain, timestamp, utcOffset} = ctx.request.body
   let domain_name = get_domain_name(domain, from)
   if (!valid_from(from)) {
     ctx.body = 'Invalid from key'
@@ -243,8 +246,28 @@ app.post('/account_external_stats', async function(ctx) {
     client = extension_client
   }
   try {
-    const email = await verify(client, token)
-    const user_ids = await get_user_ids_from_email(email)
+    let email_hash = ""
+    if (token) {
+        const email = await verify(client, token)
+        // To anonymize, let's hash it with SHA-256
+        email_hash = crypto.createHash('sha256').update(email).digest('hex');
+    } else {
+      //We will need to use secret keyboardHidden
+      const [collection, db] = await get_collection("secret")
+      const email_hash_list = await n2p(function(cb) {
+        collection.find({_id: secret}).toArray(cb)
+      })
+      if (email_hash_list.length == 0) {
+        ctx.status = 405
+        ctx.body = {message: 'no emails associated with this secret'}
+        return
+      }
+      console.log(email_hash)
+      email_hash = email_hash_list[0]['email']
+    }
+
+
+    const user_ids = await get_user_ids_from_email(email_hash)
     for (let j = 0; j < SUPPORTED_DEVICES.length; j++) {
       const device = SUPPORTED_DEVICES[j]
       let device_user_ids = user_ids[device]
@@ -289,7 +312,7 @@ app.post('/account_external_stats', async function(ctx) {
  * }
  */
 get_stats_for_user = async function(user_id, domain_name, timestamp, utcOffset, device) {
-  return_obj = {"days": Array(7).fill(0), "weeks": Array(4).fill(0)}
+  let return_obj = {"days": Array(7).fill(0), "weeks": Array(4).fill(0)}
   var [collection, db] = await get_collection_for_user_and_logname(user_id, "domain_stats")
   // Get list of possible domain values
 
@@ -303,7 +326,7 @@ get_stats_for_user = async function(user_id, domain_name, timestamp, utcOffset, 
   } else {
     obj = {}
   }
-  time_cursor = moment(timestamp)
+  let time_cursor = moment(timestamp)
   if (utcOffset) {
     time_cursor.add(utcOffset, 'minutes')
   }
@@ -341,13 +364,15 @@ app.post('/get_user_ids_from_email', async function(ctx) {
     ctx.body = 'Invalid from key'
     return
   }
-  client = android_client2
+  let client = android_client2
   if (from == "browser") {
-    client = extension_client
+    let client = extension_client
   }
   try {
-    email = await verify(client, token)
-    ctx.body = await get_user_ids_from_email(email)
+    const email = await verify(client, token)
+    // To anonymize, let's hash it with SHA-256
+    const email_hash = crypto.createHash('sha256').update(email).digest('hex');
+    ctx.body = await get_user_ids_from_email(email_hash)
   } catch(e) {
     ctx.status = 401
     ctx.body = {message: 'Error getting email from id token.'}
@@ -380,9 +405,12 @@ sum_time_of_period = function(moment_obj, days_of_period, object) {
   return total_time
 }
 
-get_user_ids_from_email = async function(email) {
-    // To anonymize, let's hash it with SHA-256
-    email = crypto.createHash('sha256').update(email).digest('hex');
+/**
+ * Get's user ids associated with an email.
+ * @param email_hash sha256 hash of email.
+ * @param {"android": ["abcbd23432"], "browser":[]}
+ */
+get_user_ids_from_email = async function(email_hash) {
     var [collection,db] = await get_collection("email_to_user")
     var obj = await n2p(function(cb) {
       collection.find({}).toArray(cb)
@@ -392,13 +420,13 @@ get_user_ids_from_email = async function(email) {
     } else {
       obj = {}
     }
-    if (obj[email] == null) {
+    if (obj[email_hash] == null) {
       returnObj = {}
       for (var i = 0; i < SUPPORTED_DEVICES; i++) {
         returnObj[SUPPORTED_DEVICES[i]] = []
       }
     } else {
-      returnObj = obj[email]
+      returnObj = obj[email_hash]
     }
     return returnObj
 }
@@ -489,5 +517,24 @@ get_domain_name = function(domain, from) {
      }
    }
  }
+
+/**
+ * Generate secret that will serve as substitute for id token.
+ * This will then be added to the database.
+ * @param email_hash {string} SHA-256 hash of email.
+ * @return randomly generated 60-char hex string
+ */
+let generate_secret = async function(email_hash) {
+  // Randomly generate secret.
+  let secret = ""
+  for (let i = 0; i < 60; i++) {
+    secret += "0123456789abcdef"[Math.floor(Math.random() * 16)]
+  }
+  const [collection, db] = await get_collection("secret")
+  await n2p(function(cb){
+      collection.insert({_id: secret, email: email_hash}, cb)
+  })
+  return secret
+}
 
 require('libs/globals').add_globals(module.exports)
