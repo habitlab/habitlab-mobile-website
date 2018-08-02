@@ -166,12 +166,14 @@ app.post('/register_user_with_email', async function(ctx) {
   }
   try {
     email = await verify(client, token)
+    console.log("EMAIL: " + email)
     // To anonymize, let's hash it with SHA-256
     email = crypto.createHash('sha256').update(email).digest('hex');
+    console.log('HASH: ' + email)
     // The id token was valid! We have a user
     var [collection, db] = await get_collection("email_to_user")
     var obj = await n2p(function(cb) {
-      collection.find({}).toArray(cb)
+      collection.find({_id: email}).toArray(cb)
     })
     var objFound = false
     if (obj != null && obj.length > 0)  {
@@ -179,28 +181,21 @@ app.post('/register_user_with_email', async function(ctx) {
       objFound = true
     } else {
       obj = {}
-    }
-    if (obj[email] == null) {
-      obj[email] = {}
-      for (var i = 0; i < SUPPORTED_DEVICES.length; i++) {
-        obj[email][SUPPORTED_DEVICES[i]] = []
+      for (device of SUPPORTED_DEVICES) {
+        obj[device] = []
       }
     }
-    var set = new Set(obj[email][from])
+    //Convert to set to ensure we're not adding a duplicate id.
+    var set = new Set(obj[from])
     set.add(userid)
     // MONGODB deals with arrays better than sets!
-    obj[email][from] = Array.from(set)
-    if (objFound) {
-      collection.updateOne({}, {$set: obj}, function(err, res) {
+    console.log("OBJ: "+ JSON.stringify(obj))
+    obj[from] = Array.from(set)
+      collection.updateOne({_id: email}, {$set: obj}, {upsert: true}, function(err, res) {
         if (err)  {
           throw err
         }
       })
-    } else {
-      await n2p(function(cb) {
-        collection.insert(fix_object(obj),cb)
-      })
-    }
     const secret = await generate_secret(email)
     ctx.body = {message: 'Sucesss! Registered user ' + userid + ' with ' + email,
                 secret: secret}
@@ -348,7 +343,6 @@ get_stats_for_user = async function(user_id, domain_name, timestamp, utcOffset, 
   return return_obj
 }
 
-
 /**
  * @param token: id token corresponding to email of synced user.
  * @param from: the type of device the request came from. The response will still contain user ids
@@ -413,22 +407,17 @@ sum_time_of_period = function(moment_obj, days_of_period, object) {
 get_user_ids_from_email = async function(email_hash) {
     var [collection,db] = await get_collection("email_to_user")
     var obj = await n2p(function(cb) {
-      collection.find({}).toArray(cb)
+      collection.find({_id: email_hash}).toArray(cb)
     })
     if (obj!= null && obj.length > 0) {
       obj = obj[0]
     } else {
       obj = {}
-    }
-    if (obj[email_hash] == null) {
-      returnObj = {}
-      for (var i = 0; i < SUPPORTED_DEVICES; i++) {
-        returnObj[SUPPORTED_DEVICES[i]] = []
+      for (let device of SUPPORTED_DEVICES) {
+        obj[device] = []
       }
-    } else {
-      returnObj = obj[email_hash]
     }
-    return returnObj
+    return obj
 }
 
 /**

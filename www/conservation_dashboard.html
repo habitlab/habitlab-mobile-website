@@ -46,6 +46,7 @@
         </td>
       </tr>
     </table>
+    {{ test }}
   </div>
   <script type="text/javascript">
     let app = new Vue({
@@ -64,11 +65,13 @@
               infrequent: 3
             }
           }
-        ]
+        ],
+        test: "not set"
       }
     })
     //Next, we need to fetch this data.
-    synced_users = get_json('/get_synced_users')
+    getjson('/synced_user').then(e => app.test = e.hello)
+
   </script>
 </body>
 
