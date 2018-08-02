@@ -1,0 +1,75 @@
+<html>
+<head>
+  <title>Conservation Experiment</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="libfrontend.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <h3>Number of synced users: {{ num_synced_users }}</h3>
+    <br>
+    <h3>Synced Users:</h3>
+    <table border=1>
+      <tr>
+        <td>Email Hash</td>
+        <td>
+          <table border=2>
+            <tr>
+              <td>Android</td>
+              <td>Num of Frequent Interventions</td>
+              <td>Num of Infrequent Interventions</td>
+            </tr>
+            <tr>
+              <td>Browser</td>
+              <td>Num of Frequent Interventions</td>
+              <td>Num of Infrequent Interventions</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr v-for="user in synced_users">
+        <td>{{ user.email }}</td>
+        <td>
+          <table border=2>
+            <tr>
+              <td>Android</td>
+              <td>{{ user.android.frequent }}</td>
+              <td>{{ user.android.infrequent }}</td>
+            </tr>
+            <tr>
+              <td>Browser</td>
+              <td>{{ user.browser.frequent }}</td>
+              <td>{{ user.browser.infrequent }}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <script type="text/javascript">
+    let app = new Vue({
+      el: '#app',
+      data: {
+        num_synced_users: 'Loading',
+        synced_users: [
+          {
+            email: "asdf;lj",
+            android: {
+              frequent: 3,
+              infrequent: 4
+            },
+            browser: {
+              frequent: 23,
+              infrequent: 3
+            }
+          }
+        ]
+      }
+    })
+    //Next, we need to fetch this data.
+    synced_users = get_json('/get_synced_users')
+  </script>
+</body>
+
+</html>

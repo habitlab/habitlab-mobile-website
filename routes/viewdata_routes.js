@@ -56,4 +56,5 @@ app.get('/listcollections', auth, async function(ctx) {
   ctx.body = JSON.stringify(await list_collections())
 })
 
+
 require('libs/globals').add_globals(module.exports)
