@@ -24,7 +24,7 @@ const {
 const n2p = require('n2p')
 const moment = require('moment')
 const semver = require('semver')
-
+/**
 app.get('/printcollection', auth, async function(ctx) {
   const {userid, logname} = ctx.request.query
   const collection_name = ctx.request.query.collection
@@ -55,6 +55,7 @@ app.get('/listcollections', auth, async function(ctx) {
   ctx.type = 'json'
   ctx.body = JSON.stringify(await list_collections())
 })
+*/
 
 
 require('libs/globals').add_globals(module.exports)
