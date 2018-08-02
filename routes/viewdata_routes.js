@@ -59,7 +59,7 @@ app.get('/listcollections', auth, async function(ctx) {
 app.get('/synced_user', auth, async function(ctx){
   const [collection, db] = await get_collection('email_to_user')
   let synced_users = []
-  
+
   ctx.type = 'json'
   ctx.body = JSON.stringify({hello: 'hi'})
 })
