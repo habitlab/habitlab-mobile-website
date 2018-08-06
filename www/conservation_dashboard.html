@@ -3,76 +3,144 @@
   <title>Conservation Experiment</title>
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
   <script src="libfrontend.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
 </head>
 
 <body>
-  <div id="app">
-    <h3>Number of synced users: {{ num_synced_users }}</h3>
+  <div id="app" class="container-fluid">
+    <h3>Number of synced users: {{ synced_users.length }}</h3>
     <br>
     <h3>Synced Users:</h3>
-    <table border=1>
-      <tr>
-        <td>Email Hash</td>
-        <td>
-          <table border=2>
-            <tr>
-              <td>Android</td>
-              <td>Num of Frequent Interventions</td>
-              <td>Num of Infrequent Interventions</td>
-            </tr>
-            <tr>
-              <td>Browser</td>
-              <td>Num of Frequent Interventions</td>
-              <td>Num of Infrequent Interventions</td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-      <tr v-for="user in synced_users">
-        <td>{{ user.email }}</td>
-        <td>
-          <table border=2>
-            <tr>
-              <td>Android</td>
-              <td>{{ user.android.frequent }}</td>
-              <td>{{ user.android.infrequent }}</td>
-            </tr>
-            <tr>
-              <td>Browser</td>
-              <td>{{ user.browser.frequent }}</td>
-              <td>{{ user.browser.infrequent }}</td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-    {{ test }}
+    <template v-for="account in synced_users">
+      <h3> {{account.email}} </h3>
+      <div class="row">
+          <template v-for="device in ['android', 'browser']">
+              <div class="col-6">
+                  <h4>{{ device }}</h4>
+                  <template v-for="user in account[device]">
+                    <h5>{{ user.id }}</h5>
+                    <table class="table table-hover">
+                      <thead class="thead-light">
+                        <tr>
+                          <th><a href="https://en.wikipedia.org/wiki/ISO_week_date">ISO Week</a></th>
+                          <th scope="col" >Frequent Goals:</th>
+                          <th scope="col">Infrequent Goals: </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        
+                          <template v-for="(week, iso) in user.week_data">
+                            <tr> 
+                              <td> {{ iso }}</td>
+                              <td>
+                                <ul>
+                                  <template v-for="domain in week.infreq">
+                                    <li>{{ domain }}</li>
+                                  </template>
+                                </ul>
+                              </td>
+                              <td>
+                                <ul>
+                                  <template v-for="domain in week.freq">
+                                    <li>{{ domain }}</li>
+                                  </template>
+                                </ul>
+                              </td>
+                            </tr>
+                          </template>
+                        
+                      </tbody>
+                    </table>
+                  </template> 
+              </div>
+          </template>
+          
+          
+      </div>
+      
+      <h5></h5>
+    </template>
   </div>
   <script type="text/javascript">
     let app = new Vue({
       el: '#app',
       data: {
+        devices: ['android', 'browser'],
         num_synced_users: 'Loading',
         synced_users: [
           {
-            email: "asdf;lj",
-            android: {
-              frequent: 3,
-              infrequent: 4
-            },
-            browser: {
-              frequent: 23,
-              infrequent: 3
-            }
+            email: "emailhash",
+            android: [
+              {
+                id: "userid",
+                week_data: 
+                  {
+                    23: {
+                      freq: [
+                      "facebook.com",
+                      "gmail.com"
+                    ],
+                    infreq: [
+                      "youtube.com",
+                      "apples.com"
+                    ]
+                    }
+                  }
+              }
+            ],
+            browser: [
+              {
+                id: "userid",
+                week_data:
+                  {
+                    23: {
+                      freq: [
+                      "facebook.com",
+                      "gmail.com"
+                    ],
+                    infreq: [
+                      "youtube.com",
+                      "apples.com"
+                    ]  
+                    }
+                    
+                  }
+              }
+            ]
           }
         ],
         test: "not set"
       }
     })
     //Next, we need to fetch this data.
-    getjson('/synced_user').then(e => app.test = e.hello)
-
+    const DEVICES = ["android", "browser"]
+    getjson('/synced_emails').then(async function(users) {
+      for (let user of users) {
+        const user_stats = {email: user._id}
+        // For each platform ...
+        for (let device of DEVICES) {
+          user_stats[device] = []
+          for (let id of user[device]) {
+            getjson('/freq_stats_for_user?id=' + id).then(function(stats){
+              user_obj = {id: id, week_data: stats}
+              user_stats[device].push(user_obj)
+              //Check if this user's stats are all done....
+              if (user_stats["android"].length == user["android"].length
+                && user_stats["browser"].length == user["browser"].length) {
+                  //This user's done! Let's add them.
+                  console.log(user_stats)
+                  app.synced_users.push(user_stats)
+              }
+            })
+          }
+        }
+      }
+    })
   </script>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
 </body>
 
 </html>

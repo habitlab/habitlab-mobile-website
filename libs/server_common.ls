@@ -301,6 +301,64 @@ export fix_object = (obj) ->
     output[k] = fix_object(v)
   return output
 
+
+/**
+ * This fetches the database from habitlab-website (not the mobile one)
+ */
+export get_habitlab_mongo_db = memoizeSingleAsync ->>
+  connection_options = {
+    w: 0,
+    j: false,
+    # the server/replset/mongos options are deprecated, all their options are supported at the top level of the options object [poolSize,ssl,sslValidate,sslCA,sslCert,ciphers,ecdhCurve,sslKey,sslPass,sslCRL,autoReconnect,noDelay,keepAlive,connectTimeoutMS,family,socketTimeoutMS,reconnectTries,reconnectInterval,ha,haInterval,replicaSet,secondaryAcceptableLatencyMS,acceptableLatencyMS,connectWithNoPrimary,authSource,w,wtimeout,j,forceServerObjectId,serializeFunctions,ignoreUndefined,raw,bufferMaxEntries,readPreference,pkFactory,promiseLibrary,readConcern,maxStalenessSeconds,loggerLevel,logger,promoteValues,promoteBuffers,promoteLongs,domainsEnabled,keepAliveInitialDelay,checkServerIdentity,validateOptions,appname,auth]
+    # sets how many times to try reconnecting
+    reconnectTries: Number.MAX_VALUE,
+    # sets the delay between every retry (milliseconds)
+    reconnectInterval: 1000,
+    keepAlive: 1,
+    connectTimeoutMS: 30000,
+  }
+  /*
+  if process.env.PORT? # on heroku
+    connection_options.readPreference = mongodb.ReadPreference.PRIMARY_PREFERRED
+  else # local machine
+    connection_options.readPreference = mongodb.ReadPreference.SECONDARY
+    connection_options.readConcern = {
+      level: 'available'
+    }
+  */
+  try
+    return await n2p -> mongodb.MongoClient.connect(
+      getsecret("HABITLAB_MONGODB_URI"),
+      connection_options,
+      it
+    )
+  catch err
+    console.error 'error getting mongodb'
+    console.error err
+    return
+
+export get_habitlab_collection = (collection_name) ->>
+  db = await get_habitlab_mongo_db()
+  fakedb = {
+    close: ->
+  }
+  collection = db.collection(collection_name)
+  proxy_func = (obj, methodname) ->
+    orig_method = obj[methodname]
+    new_method = ->
+      log_collection_exists(collection_name)
+      return orig_method.apply(obj, arguments)
+    obj[methodname] = new_method.bind(obj)
+  proxy_func(collection, 'insert')
+  proxy_func(collection, 'insertMany')
+  proxy_func(collection, 'insertOne')
+  proxy_func(collection, 'update')
+  proxy_func(collection, 'updateMany')
+  proxy_func(collection, 'updateOne')
+  proxy_func(collection, 'save')
+  #proxy_func(collection, 'findAndModify')
+  #proxy_func(collection, 'findAndUpdate')
+  return [collection, fakedb]
 /**
  * This function validates the from parameter to ensure it falls under the supported device types.
  */

@@ -56,13 +56,75 @@ app.get('/listcollections', auth, async function(ctx) {
   ctx.body = JSON.stringify(await list_collections())
 })
 
-app.get('/synced_user', auth, async function(ctx){
+/**
+ * Gets list of users who have both android and browser installs.
+ * @return [{_id: <email_hash>, android: [], browser: []}]
+ */
+app.get('/synced_emails', auth, async function(ctx){
   const [collection, db] = await get_collection('email_to_user')
-  let synced_users = []
-
+  //Find users who have BOTH Android and Browser data.
+  const emails = await n2p(function(cb) {
+    collection.find(
+      {$or:
+        [
+          {android: {$exists: true, $not: {$size: 0}}},
+          {browser: {$exists: true, $not: {$size: 0}}}
+        ]
+      }
+    ).toArray(cb)
+  })
+  for (let email of emails) {
+    if (email.android == null){
+      email.android = []
+    } else if (email.browser == null) {
+      email.browser = []
+    }
+  }
   ctx.type = 'json'
-  ctx.body = JSON.stringify({hello: 'hi'})
+  ctx.body = JSON.stringify(emails)
 })
+
+/**
+ * Figures out number of enabled frequent and infrequent domains.
+ */
+app.get('/freq_stats_for_user', auth, async function(ctx) {
+  const {id} = ctx.request.query
+  const [collection, db] = await get_collection_for_user_and_logname(id, "sessions")
+  // Go thru and count em.
+  const options = ['freq', 'infreq']
+  let goals = {}
+  const isoWeeks = new Set()
+  for (let freq of options) {
+    const sessions = await n2p(function(cb){
+      collection.find({
+        enabled: true,
+        frequent: freq == "freq" ? true : false
+      }).toArray(cb)
+    })
+    for (session of sessions) {
+      console.log(session)
+      if (session.isoWeek != null) {
+        isoWeeks.add(session.isoWeek)
+        if (goals[session.isoWeek] == null){
+          goals[session.isoWeek] = {'freq': new Set(), 'infreq': new Set()}
+        }
+        goals[session.isoWeek][freq].add(session.domain)
+      }
+    }
+  }
+  //Convert these sets into lists.
+  for (let iso of isoWeeks) {
+    goals[iso] = {'freq': Array.from(goals[iso]['freq']), 'infreq': Array.from(goals[iso]['infreq'])}
+  }
+    ctx.body = goals
+  ctx.type = 'json'
+})
+
+app.get('/freq_stats_for_user_browser', auth, async function(ctx) {
+  const {id} = ctx.request.query
+  const [collection, db] = await get_collection_for_user_and_lognae
+})
+
 
 
 require('libs/globals').add_globals(module.exports)

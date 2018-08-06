@@ -508,6 +508,35 @@ get_domain_name = function(domain, from) {
  }
 
 /**
+ * This script converts the email to user collection from one ginormous document
+ * into a document per email hash, which will be much more manageable.
+ */
+ let transition_email_to_user = async function(ctx) {
+   const [collection, db] = await get_collection('email_to_user')
+   const docs = await n2p(function(cb) {
+     collection.find().toArray(cb)
+   })
+   const big_obj = docs[0]
+   //Now for for each email hash
+   let counter = 0
+   for (email_hash in big_obj) {
+     if (email_hash == "_id") continue //This is not an email hash
+     await n2p(function(cb) {
+       doc_to_insert = {
+         _id: email_hash,
+         android: big_obj[email_hash].android,
+         browser: big_obj[email_hash].browser
+       }
+       collection.insert(doc_to_insert, cb)
+     })
+     console.log('we migrated email ' + email_hash)
+     counter += 1
+   }
+   ctx.body = 'Finished migrating ' + counter + ' users'
+   ctx.type = 'json'
+ }
+
+/**
  * Generate secret that will serve as substitute for id token.
  * This will then be added to the database.
  * @param email_hash {string} SHA-256 hash of email.
