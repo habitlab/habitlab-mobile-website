@@ -4,3 +4,5 @@ desktop.ini
 .getsecret.yaml
 /mongodata
 /package-lock.json
+.node-persist
+listcollections
