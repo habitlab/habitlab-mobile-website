@@ -4,6 +4,7 @@ const {
   auth,
   get_mongo_db,
   get_collection,
+  get_habitlab_collection,
   get_signups,
   get_secrets,
   get_logging_states,
@@ -102,10 +103,9 @@ app.get('/freq_stats_for_user', auth, async function(ctx) {
       }).toArray(cb)
     })
     for (session of sessions) {
-      console.log(session)
       if (session.isoWeek != null) {
         isoWeeks.add(session.isoWeek)
-        if (goals[session.isoWeek] == null){
+        if (goals[session.isoWeek] == null) {
           goals[session.isoWeek] = {'freq': new Set(), 'infreq': new Set()}
         }
         goals[session.isoWeek][freq].add(session.domain)
@@ -116,14 +116,49 @@ app.get('/freq_stats_for_user', auth, async function(ctx) {
   for (let iso of isoWeeks) {
     goals[iso] = {'freq': Array.from(goals[iso]['freq']), 'infreq': Array.from(goals[iso]['infreq'])}
   }
-    ctx.body = goals
+  ctx.body = goals
   ctx.type = 'json'
 })
 
 app.get('/freq_stats_for_user_browser', auth, async function(ctx) {
   const {id} = ctx.request.query
-  const [collection, db] = await get_collection_for_user_and_lognae
+  const [collection, db] = await get_habitlab_collection(id + "_synced:goal_frequencies")
+  const goal_logs = await n2p(function(cb) {
+    collection.find({}).toArray(cb)
+  })
+  let goals = {}
+  
+  for (let goal_log of goal_logs) {
+    // FREQ: isoWeeks() % 2 == onWeek
+    const isoWeek = moment(goal_log["timestamp_local"]).isoWeek()
+    if (goals[isoWeek] == null) {
+      goals[isoWeek] = {'freq': [], 'infreq': []}  
+    }
+    
+    
+    let log = JSON.parse(goal_log['val'])
+    let freq = false
+    console.log(goal_log['val'])
+    if (log['algorithm'] === 'isoweek_alternating') {
+      console.log('isoweek_alternating')
+      //Old algorithm: onweeks == isoWeek %  2
+      freq = log.onweeks == isoWeek % 2
+    } else {
+      console.log('isoweek_random')
+      // New algorithm: array of 0 vs 1 for each week of the year.
+      // 0 is infrequent, 1 is frequent
+      freq = log.onweeks[isoWeek] == 1
+    }
+    if (freq) {
+      goals[isoWeek]["freq"].push(goal_log['key'])
+    } else {
+      goals[isoWeek]["infreq"].push(goal_log['key'])
+    }
+  }
+  ctx.type = 'json'
+  ctx.body = goals
 })
+
 
 
 

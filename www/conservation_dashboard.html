@@ -10,6 +10,7 @@
 <body>
   <div id="app" class="container-fluid">
     <h3>Number of synced users: {{ synced_users.length }}</h3>
+    <h4>Both: {{bothEnd}}</h4><h4>Just Android: {{androidEnd - bothEnd}}</h4><h4>Just Browser: {{browserEnd - androidEnd}}</h4>
     <br>
     <h3>Synced Users:</h3>
     <template v-for="account in synced_users">
@@ -35,14 +36,14 @@
                               <td> {{ iso }}</td>
                               <td>
                                 <ul>
-                                  <template v-for="domain in week.infreq">
+                                  <template v-for="domain in week.freq">
                                     <li>{{ domain }}</li>
                                   </template>
                                 </ul>
                               </td>
                               <td>
                                 <ul>
-                                  <template v-for="domain in week.freq">
+                                  <template v-for="domain in week.infreq">
                                     <li>{{ domain }}</li>
                                   </template>
                                 </ul>
@@ -66,10 +67,13 @@
     let app = new Vue({
       el: '#app',
       data: {
+        androidEnd: 0,
+        browserEnd: 0,
+        bothEnd: 0,
         devices: ['android', 'browser'],
         num_synced_users: 'Loading',
         synced_users: [
-          {
+          /* ACCOUNT OBJECT SCHEMA:  {
             email: "emailhash",
             android: [
               {
@@ -108,32 +112,62 @@
                   }
               }
             ]
-          }
-        ],
-        test: "not set"
+          }*/
+        ]
       }
     })
+    let insertUser = function(user) {
+      if (user["android"].length > 0  && user["browser"].length > 0){
+        //  They should be at the top.
+        app.synced_users.splice(app.bothEnd, 0, user)
+        app.bothEnd += 1
+        app.androidEnd += 1
+        app.browserEnd += 1
+      } else if (user["android"].length > 0) {
+        app.synced_users.splice(app.androidEnd, 0, user)
+        app.androidEnd +=  1
+        app.browserEnd +=1
+      } else {
+        app.synced_users.splice(app.browserEnd, 0, user) 
+        app.browserEnd += 1
+      }
+
+    }
     //Next, we need to fetch this data.
     const DEVICES = ["android", "browser"]
     getjson('/synced_emails').then(async function(users) {
       for (let user of users) {
-        const user_stats = {email: user._id}
+        const user_stats = {email: user._id, "android" : [], "browser": []}
         // For each platform ...
-        for (let device of DEVICES) {
-          user_stats[device] = []
-          for (let id of user[device]) {
-            getjson('/freq_stats_for_user?id=' + id).then(function(stats){
-              user_obj = {id: id, week_data: stats}
-              user_stats[device].push(user_obj)
-              //Check if this user's stats are all done....
-              if (user_stats["android"].length == user["android"].length
-                && user_stats["browser"].length == user["browser"].length) {
-                  //This user's done! Let's add them.
-                  console.log(user_stats)
-                  app.synced_users.push(user_stats)
-              }
-            })
-          }
+        if (user_stats.email == "f653fba473726066017d092faf775b60a39bd4616590332eb815f0bb74fa22f2") {
+          console.log("ACCOUNT OBJ: " + JSON.stringify(user))
+        }
+        for (let id of user['android']) {
+          getjson('/freq_stats_for_user?id=' + id).then(function(stats){
+            user_obj = {id: id, week_data: stats}
+            user_stats["android"].push(user_obj)
+            //Check if this user's stats are all done....
+            if (user_stats["android"].length == user["android"].length
+              && user_stats["browser"].length == user["browser"].length) {
+                if (user_stats.email == "f653fba473726066017d092faf775b60a39bd4616590332eb815f0bb74fa22f2") {
+                  console.log("LOGGING" + JSON.stringify(user_stats))
+                }
+                //This user's done! Let's add them.
+                insertUser(user_stats)
+            }
+          })
+        }
+        for  (let id of user['browser'])  {
+          getjson('/freq_stats_for_user_browser?id=' + id).then(function(stats){
+            user_obj = {id: id, week_data: stats}
+            user_stats["browser"].push(user_obj)
+            
+            if (user_stats["android"].length == user["android"].length
+              && user_stats["browser"].length == user["browser"].length) {
+                //This user's done! Let's add them.
+                insertUser(user_stats)
+            }
+          })
         }
       }
     })
