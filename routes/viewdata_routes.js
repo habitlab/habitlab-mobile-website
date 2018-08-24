@@ -28,7 +28,7 @@ const semver = require('semver')
 
 app.get('/printcollection', auth, async function(ctx) {
   const {userid, logname} = ctx.request.query
-  const collection_name = ctx.request.query.collection
+  let collection_name = ctx.request.query.collection
   if (userid != null && logname != null) {
     collection_name = `${userid}_${logname}`
   }
@@ -130,30 +130,12 @@ app.get('/freq_stats_for_user_browser', auth, async function(ctx) {
     collection.find({}).toArray(cb)
   })
   let goals = {}
-  
+
   for (let goal_log of goal_logs) {
     // FREQ: isoWeeks() % 2 == onWeek
-    console.log(JSON.stringify(goal_log))
     const isoWeek = moment(goal_log["timestamp_local"]).isoWeek()
-    
-    
-    
     let log = JSON.parse(goal_log['val'])
     let freq = false
-    console.log(goal_log['val'])
-
-       
-    /*if (log['algorithm'] === 'isoweek_alternating') {
-      for (let week = isoWeek; week <= 32; week++) {
-        //Old algorithm: onweeks == isoWeek %  2
-        freq = log.onweeks == isoWeek % 2
-        if (freq) {
-          goals[isoWeek]["freq"].push(goal_log['key'])
-        } else {
-          goals[isoWeek]["infreq"].push(goal_log['key'])
-        }
-      }
-    }*/
     if (log['algorithm'] === 'isoweek_random' ){
       // New algorithm: array of 0 vs 1 for each week of the year.
       // 0 is infrequent, 1 is frequent
@@ -161,9 +143,8 @@ app.get('/freq_stats_for_user_browser', auth, async function(ctx) {
       for (let week = isoWeek; week <= curIsoWeek; week++) {
         //First, check if algorithm is alternating.
         if (goals[week] == null) {
-          goals[week] = {'freq': [], 'infreq': []}  
+          goals[week] = {'freq': [], 'infreq': []}
         }
-        console.log(week + " " + goal_log['key']) 
         if (log.onweeks[week] == 1) {
           browser_freq++
           goals[week]["freq"].push(goal_log['key'])
@@ -171,10 +152,9 @@ app.get('/freq_stats_for_user_browser', auth, async function(ctx) {
           browser_infreq++
           goals[week]["infreq"].push(goal_log['key'])
         }
-      } 
+      }
     }
-    console.log(browser_freq + " " + browser_infreq)
-    
+
   }
   ctx.type = 'json'
   ctx.body = goals
