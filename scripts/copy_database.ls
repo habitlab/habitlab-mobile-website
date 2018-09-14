@@ -2,9 +2,11 @@ require! {
   mongodb
   getsecret
   n2p
+  process
 }
 
 fs = require('fs-extra')
+{exec} = require('shelljs')
 
 storage = require('node-persist')
 
@@ -94,7 +96,9 @@ sync_all_in_collection = (collection_name, db_src, db_dst) ->>
     await keep_trying -> c_dst.insertMany(all_items_which_need_to_be_inserted, it)
   else
     console.log 'individually incrementally inserting ' + all_ids_which_need_to_be_inserted.length + ' items'
-    for idname in all_ids_which_need_to_be_inserted
+    for idname,idx in all_ids_which_need_to_be_inserted
+      if idx % 100 == 0
+        console.log(idx + ' / ' + all_ids_which_need_to_be_inserted.length)
       item_src = await keep_trying -> c_src.find({_id: idname}).toArray(it)
       if not item_src? # should never happen
         console.log 'could not find item with id ' + idname + ' in collection ' + collection_name
@@ -119,9 +123,36 @@ list_collections = (db_src) ->>
     output.push('collections')
   return output
 
+drop_db_by_url = (url) ->>
+  db = await n2p -> mongodb.MongoClient.connect(
+    url,
+    {
+      readPreference: mongodb.ReadPreference.SECONDARY,
+      readConcern: {level: 'available'},
+      w: 0,
+    },
+    it
+  )
+  await n2p -> db.dropDatabase(it)
+  return
+
+set_mongourl_to_inactive = ->
+  mongodb_uri_heroku = exec('heroku config:get MONGODB_URI --app habitlab').stdout.trim()
+  mongodb_uri_server1_heroku = exec('heroku config:get MONGODB_URI_SERVER1 --app habitlab').stdout.trim()
+  mongodb_uri_server2_heroku = exec('heroku config:get MONGODB_URI_SERVER2 --app habitlab').stdout.trim()
+  if (not mongodb_uri_heroku.startsWith('mongodb://')) or (not mongodb_uri_server1_heroku.startsWith('mongodb://')) or (not mongodb_uri_server2_heroku.startsWith('mongodb://'))
+    console.log('heroku config vars MONGODB_URI MONGODB_URI_SERVER1 MONGODB_URI_SERVER2 must all be set')
+    process.exit()
+  if (mongodb_uri_heroku == mongodb_uri_server1_heroku) and (mongodb_uri_heroku != mongodb_uri_server2_heroku)
+    mongourl := mongodb_uri_server2_heroku
+  else if (mongodb_uri_heroku != mongodb_uri_server1_heroku) and (mongodb_uri_heroku == mongodb_uri_server2_heroku)
+    mongourl := mongodb_uri_server1_heroku
+  else
+    console.log('MONGODB_URI must equal one of either MONGODB_URI_SERVER1 or MONGODB_URI_SERVER2')
+    process.exit()
+  return
+
 do ->>
-  db_src = await get_mongo_db()
-  db_dst = await get_mongo_db2()
   argv = require('yargs')
   .option('collection', {
     describe: 'collection to sync. if empty all collections are synced'
@@ -138,11 +169,44 @@ do ->>
     describe: 'number of threads to use for syncing'
     default: 1
   })
-  #.option('fresh', {
-  #  describe: 'perform a fresh sync (deleting the listcio )'
-  #})
+  .option('printnonactive', {
+    describe: 'print the mongourl of the non-active server'
+    default: false
+  })
+  .option('syncnonactive', {
+    describe: 'use the non-active server as the source instead of MONGODB_SRC'
+    default: false
+  })
+  .option('dropnonactive', {
+    describe: 'drop the non-active server database'
+    default: false
+  })
+  .option('switchactive', {
+    describe: 'switch the currently active server'
+    default: false
+  })
   .strict()
   .argv
+  if argv.printnonactive
+    set_mongourl_to_inactive()
+    console.log mongourl
+    process.exit()
+  if argv.syncnonactive
+    set_mongourl_to_inactive()
+  if argv.dropnonactive
+    set_mongourl_to_inactive()
+    console.log 'droping database'
+    console.log mongourl
+    await drop_db_by_url(mongourl)
+    console.log 'done'
+    process.exit()
+  if argv.switchactive
+    set_mongourl_to_inactive()
+    exec("heroku config:set MONGODB_URI='#{mongourl}' --app habitlab")
+    console.log 'done setting mongourl to inactive'
+    process.exit()
+  db_src = await get_mongo_db()
+  db_dst = await get_mongo_db2()
   if argv.fresh
     if fs.existsSync('.node-persist')
       fs.removeSync('.node-persist')
@@ -163,6 +227,7 @@ do ->>
   resumable = argv.resumable
   if resumable
     storage.initSync()
+  thread_to_finished = [false for x in [0 til num_threads]]
   start_thread = (threadnum) ->>
     for x,idx in all_collections
       if idx % num_threads != threadnum
@@ -178,5 +243,12 @@ do ->>
         await sync_all_in_collection_fresh x, db_src, db_dst
       if resumable
         storage.setItemSync(x, true)
+    thread_to_finished[threadnum] = true
   for threadnum from 0 til num_threads
     start_thread threadnum
+  while true
+    console.log thread_to_finished
+    await sleep(10000)
+    if thread_to_finished.indexOf(false) == -1
+      console.log 'all finished'
+      process.exit()
