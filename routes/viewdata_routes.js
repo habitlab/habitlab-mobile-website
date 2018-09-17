@@ -123,6 +123,7 @@ app.get('/freq_stats_for_user', auth, async function(ctx) {
 })
 
 let browser_freq = 0
+
 let browser_infreq = 0
 
 app.get('/freq_stats_for_user_browser', auth, async function(ctx) {
