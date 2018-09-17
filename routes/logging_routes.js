@@ -35,6 +35,7 @@ const ANDROID = "android"
 const BROWSER = "browser"
 
 async function verify(client, token) {
+  console.log("trying  to verify")
   const ticket = await client.verifyIdToken({
       idToken: token,
       audience: [CLIENT_ID_ANDROID, CLIENT_ID_ANDROID_PROD].concat(CLIENT_IDS_EXTENSION),  // Specify the CLIENT_ID of the app that accesses the backend
@@ -42,6 +43,7 @@ async function verify(client, token) {
       //[CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3]
   })
   const payload = ticket.getPayload()
+  console.log("YAY!" + payload['email'] )
   return payload['email']
   // If request specified a G Suite domain:
   //const domain = payload['hd']
@@ -160,10 +162,11 @@ app.post('/register_user_with_email', async function(ctx) {
   ctx.type = 'json'
   const {userid, token, type, from} = ctx.request.body
   // NOTE: userid is the userid associated with HabitLab install, NOT Google's user id.
-  client = android_client2
+  client = android_client
   if (from == "browser") {
     client = extension_client
   }
+  console.log("TRYING TO GET EMAILclie")
   try {
     email = await verify(client, token)
     console.log("EMAIL: " + email)

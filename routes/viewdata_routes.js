@@ -99,16 +99,18 @@ app.get('/freq_stats_for_user', auth, async function(ctx) {
     const sessions = await n2p(function(cb){
       collection.find({
         enabled: true,
-        frequent: freq == "freq" ? true : false
+        frequent: freq == "freq" ? true : false,
       }).toArray(cb)
     })
     for (session of sessions) {
-      if (session.isoWeek != null) {
-        isoWeeks.add(session.isoWeek)
-        if (goals[session.isoWeek] == null) {
-          goals[session.isoWeek] = {'freq': new Set(), 'infreq': new Set()}
+      if (session.interventions && session.interventions.length > 0) {
+        if (session.isoWeek != null) {
+          isoWeeks.add(session.isoWeek)
+          if (goals[session.isoWeek] == null) {
+            goals[session.isoWeek] = {'freq': new Set(), 'infreq': new Set()}
+          }
+          goals[session.isoWeek][freq].add(session.domain)
         }
-        goals[session.isoWeek][freq].add(session.domain)
       }
     }
   }
@@ -133,10 +135,9 @@ app.get('/freq_stats_for_user_browser', auth, async function(ctx) {
 
   for (let goal_log of goal_logs) {
     // FREQ: isoWeeks() % 2 == onWeek
-    const isoWeek = moment(goal_log["timestamp_local"]).isoWeek()
+    const isoWeek = moment(goal_log["timestamp"]).isoWeek()
     let log = JSON.parse(goal_log['val'])
-    let freq = false
-    if (log['algorithm'] === 'isoweek_random' ){
+    if (log['algorithm'] === 'isoweek_random'){
       // New algorithm: array of 0 vs 1 for each week of the year.
       // 0 is infrequent, 1 is frequent
       let curIsoWeek = moment().isoWeek() + 1
